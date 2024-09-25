@@ -8,8 +8,9 @@ public class Chunreal_ProjectEditorTarget : TargetRules
 	public Chunreal_ProjectEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
-		DefaultBuildSettings = BuildSettingsVersion.V2;
-        bOverrideBuildEnvironment = true;
+		DefaultBuildSettings = BuildSettingsVersion.V5;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_4;
+        //bOverrideBuildEnvironment = true;
 
 
         ExtraModuleNames.AddRange( new string[] { "Chunreal_Project" } );

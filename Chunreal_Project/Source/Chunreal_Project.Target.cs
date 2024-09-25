@@ -8,7 +8,7 @@ public class Chunreal_ProjectTarget : TargetRules
 	public Chunreal_ProjectTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
-		DefaultBuildSettings = BuildSettingsVersion.V2;
+		DefaultBuildSettings = BuildSettingsVersion.V5;
 
 		ExtraModuleNames.AddRange( new string[] { "Chunreal_Project" } );
 	}

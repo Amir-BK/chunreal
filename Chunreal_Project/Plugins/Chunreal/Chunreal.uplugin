@@ -19,7 +19,7 @@
 		{
 			"Name": "Chunreal",
 			"Type": "Runtime",
-			"LoadingPhase": "Default",
+			"LoadingPhase": "PreDefault",
 			"PlatformAllowList": [
 				"Win64",
                 		"Mac"
@@ -29,6 +29,10 @@
 	"Plugins": [
 		{
 			"Name": "Metasound",
+			"Enabled": true
+		},
+		{
+			"Name": "Harmonix",
 			"Enabled": true
 		}
 	]

@@ -6,6 +6,7 @@ public class Chunreal : ModuleRules
     {
         //Allow C++ try catch
         bEnableExceptions = true;
+        IWYUSupport = IWYUSupport.None;
 
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -36,9 +37,14 @@ public class Chunreal : ModuleRules
                 "Core",
                 "MetasoundFrontend",
                 "MetasoundGraphCore",
+                "HarmonixDsp",
+                "HarmonixMidi",
+                "Harmonix",
+                "HarmonixMetasound",
+                "MetasoundStandardNodes",
             }
             );
-            
+
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
