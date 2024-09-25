@@ -24,12 +24,7 @@ https://github.com/ccrma/chunreal/wiki
 
 ## Template Project
 
-This git repository hosts a template Unreal Engine 5.3 project that includes example scenes, Blueprints, MetaSound sources, and materials. Clone or fork the repository and generate Visual Studio project files. 
-If this is your first time compiling a Unreal Engine project, set up your IDE by following these tutorials:
-
-https://docs.unrealengine.com/5.3/en-US/setting-up-visual-studio-development-environment-for-cplusplus-projects-in-unreal-engine/
-
-https://docs.unrealengine.com/5.3/en-US/how-to-generate-unreal-engine-project-files-for-your-ide/
+This repo contains all the content from the original Chunreal repository only encapsulated inside the plugin package, all the example content can be found inside the plugin's content folder, there's also a midi file to test the new node with.
 
 ### Try Example Scenes!
 Try opening the following example levels and playing in the editor viewport!
