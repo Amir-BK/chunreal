@@ -1,3 +1,16 @@
+#Purpose of fork -
+This fork encapsulates the Chunreal repo as a plugin instead of a Uproject to make it easier to clone into existing projects.
+
+On top of that this fork adds a Chuck Midi Renderer metasound node that can be used to render harmonix midi stream through Chuck instances, more to come. 
+
+
+
+https://github.com/user-attachments/assets/3cbf0253-2bab-4e67-ba18-3aee5be4ad10
+
+
+The node is largely used like the ChucK main node, check the example ck in the metasound asset to see how the midi is actually consumed right now, I hope to figure out a more robust method in the future. 
+
+
 # Chunreal
 ## ChucK - Strongly-timed Music Programming Language - in Unreal Engine 5
 **_Chunreal_** is a plugin for [Unreal Engine 5](https://www.unrealengine.com/)  that allows users to compile [ChucK](https://github.com/ccrma/chuck) code at runtime. Multiple ChuckMain nodes can be chained in a MetaSound graph using stereo input & output to perform modular synthesis style digital signal processing. 
