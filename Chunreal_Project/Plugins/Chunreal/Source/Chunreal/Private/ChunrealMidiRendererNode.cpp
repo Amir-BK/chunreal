@@ -310,7 +310,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			const float* inBufferLeft = Inputs.AudioInLeft->GetData();
 			const float* inBufferRight = Inputs.AudioInRight->GetData();
 			float* outBufferLeft = AudioOutLeft->GetData();
-			float* outBufferRight = AudioOutLeft->GetData();
+			float* outBufferRight = AudioOutRight->GetData();
 			const int32 numSamples = Inputs.AudioInLeft->Num();
 
 			//Run ChucK code
@@ -431,7 +431,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			PitchBendRamper.Ramp();
 
 			//Process samples by ChucK
-			FChunrealModule::RunChuck(theChuck, (float*)inBufferInterleaved, outBufferInterleaved, numSamples);
+			FChunrealModule::RunChuck(theChuck, (float*)inBufferInterleaved, outBufferInterleaved, BlockSizeFrames);
 
 			//Retrive each output channel and apply volume multiplier
 			for (int i = 0; i < BlockSizeFrames; i++)
