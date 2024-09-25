@@ -9,7 +9,9 @@ public class Chunreal_ProjectEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
+        bOverrideBuildEnvironment = true;
 
-		ExtraModuleNames.AddRange( new string[] { "Chunreal_Project" } );
+
+        ExtraModuleNames.AddRange( new string[] { "Chunreal_Project" } );
 	}
 }
