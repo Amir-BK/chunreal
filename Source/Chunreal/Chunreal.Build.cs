@@ -42,6 +42,7 @@ public class Chunreal : ModuleRules
                 "Harmonix",
                 "HarmonixMetasound",
                 "MetasoundStandardNodes",
+				"AudioExtensions"
             }
             );
 

@@ -19,10 +19,10 @@
 		{
 			"Name": "Chunreal",
 			"Type": "Runtime",
-			"LoadingPhase": "PreDefault",
+			"LoadingPhase": "EarliestPossible",
 			"PlatformAllowList": [
 				"Win64",
-                		"Mac"
+        "Mac"
 			]
 		}
 	],

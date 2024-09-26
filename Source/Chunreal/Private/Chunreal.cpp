@@ -10,6 +10,8 @@
 
 #include "Chunreal.h"
 #include "MetasoundFrontendRegistries.h"
+#include "MetasoundDataTypeRegistrationMacro.h"
+#include "ChuckInstance.h"
 
 #define LOCTEXT_NAMESPACE "FChunrealModule"
 
@@ -53,6 +55,8 @@ void FChunrealModule::StartupModule()
 
     //Register MetaSound Nodes
     FMetasoundFrontendRegistryContainer::Get()->RegisterPendingNodes();
+
+	Metasound::RegisterDataTypeWithFrontend<Metasound::FChuckInstance, Metasound::ELiteralType::UObjectProxy, UChuckInstance>();
 }
 
 void FChunrealModule::ShutdownModule()
@@ -63,6 +67,7 @@ void FChunrealModule::ShutdownModule()
     //Delete ChucK parent
     delete chuckParent;
     chuckParent = nullptr;  
+
 }
 
 /// <summary>
