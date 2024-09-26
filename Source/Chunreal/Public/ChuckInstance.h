@@ -26,7 +26,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ChucK", meta = (ExposeOnSpawn = true))
 	FString Id;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ChucK", meta = (MultiLine = true, ExposeOnSpawn = true))
+	UPROPERTY(BlueprintReadWrite, Category = "ChucK", meta = (MultiLine = true, ExposeOnSpawn = true))
 	FString Code;
 
 private:

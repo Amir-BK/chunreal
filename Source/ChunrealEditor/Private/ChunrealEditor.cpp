@@ -13,6 +13,9 @@ void FChunrealEditor::StartupModule()
 {
 	ChuckInstanceActionsSharedPtr = MakeShared<FChuckInstanceAssetActions>();
 	FAssetToolsModule::GetModule().Get().RegisterAssetTypeActions(ChuckInstanceActionsSharedPtr.ToSharedRef());
+
+	FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	PropertyModule.RegisterCustomClassLayout("ChuckInstance", FOnGetDetailCustomizationInstance::CreateStatic(&FChuckInstanceDetails::MakeInstance));
 	
 
 };

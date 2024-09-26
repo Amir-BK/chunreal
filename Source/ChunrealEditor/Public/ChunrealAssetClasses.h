@@ -11,6 +11,13 @@
 #include "Widgets/Images/SImage.h"
 #include "AssetRegistry/AssetData.h"
 #include "ChuckInstance.h"
+#include "IDetailCustomization.h"
+#include "DetailLayoutBuilder.h"
+
+#include "DetailCategoryBuilder.h"
+#include "DetailWidgetRow.h"
+#include "ChucKSyntaxHighlighter.h"
+#include "Widgets/Text/SMultiLineEditableText.h"
 #include "ChunrealAssetClasses.generated.h"
 
 class FChuckInstanceAssetActions : public FAssetTypeActions_Base
@@ -35,6 +42,57 @@ public:
 	}
 
 };
+
+//detail customization
+class FChuckInstanceDetails : public IDetailCustomization
+{
+public:
+	// This function will be called when the properties are being customized
+	void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override
+	{
+		TArray<TWeakObjectPtr<UObject>> Outers;
+		DetailBuilder.GetObjectsBeingCustomized(Outers);
+		if (Outers.Num() == 0) return;
+		ChuckInstance = Cast<UChuckInstance>(Outers[0].Get());
+
+		//add category "ChucK" and add a MultiLineEditableText to is with the ChucK Marshaller
+		IDetailCategoryBuilder& ChucKCategory = DetailBuilder.EditCategory("Chuck");
+		ChucKCategory.AddCustomRow(FText::FromString("ChucK Code"))
+			.NameContent()
+			[
+				SNew(STextBlock)
+					.Text(FText::FromString("ChucK Code"))
+			]
+			.ValueContent()
+			[
+				SNew(SBorder)
+					.BorderBackgroundColor(FLinearColor::Black)
+					.ColorAndOpacity(FLinearColor::Black)
+
+					[
+						SNew(SMultiLineEditableText)
+							.Text(FText::FromString(ChuckInstance->Code))
+
+							.OnTextChanged_Lambda([this](const FText& InText)
+								{
+									ChuckInstance->Code = *InText.ToString();
+								})
+	
+							.Marshaller(FChucKSyntaxHighlighterMarshaller::Create())
+					]
+
+			];
+
+	}
+
+	static TSharedRef<IDetailCustomization> MakeInstance() { return MakeShareable(new FChuckInstanceDetails()); }
+
+private:
+	UChuckInstance* ChuckInstance = nullptr;
+
+};
+
+	// This function will create a new instance of this class as a shared
 
 /**
  *
