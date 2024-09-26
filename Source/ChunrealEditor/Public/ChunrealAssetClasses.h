@@ -17,7 +17,8 @@
 #include "DetailCategoryBuilder.h"
 #include "DetailWidgetRow.h"
 #include "ChucKSyntaxHighlighter.h"
-#include "Widgets/Text/SMultiLineEditableText.h"
+#include "Widgets/Input/SMultiLineEditableTextBox.h"
+#include "Brushes/SlateRoundedBoxBrush.h"
 #include "ChunrealAssetClasses.generated.h"
 
 class FChuckInstanceAssetActions : public FAssetTypeActions_Base
@@ -50,6 +51,15 @@ public:
 	// This function will be called when the properties are being customized
 	void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override
 	{
+		
+		const static FSlateRoundedBoxBrush RecessedBrush(FStyleColors::Recessed, CoreStyleConstants::InputFocusRadius);
+		const static FEditableTextBoxStyle InfoWidgetStyle =
+			FEditableTextBoxStyle(FAppStyle::Get().GetWidgetStyle<FEditableTextBoxStyle>("NormalEditableTextBox"))
+			.SetBackgroundImageNormal(RecessedBrush)
+			.SetBackgroundImageHovered(RecessedBrush)
+			.SetBackgroundImageFocused(RecessedBrush)
+			.SetBackgroundImageReadOnly(RecessedBrush);
+		
 		TArray<TWeakObjectPtr<UObject>> Outers;
 		DetailBuilder.GetObjectsBeingCustomized(Outers);
 		if (Outers.Num() == 0) return;
@@ -67,18 +77,13 @@ public:
 			[
 				SNew(SBorder)
 					.BorderBackgroundColor(FLinearColor::Black)
-					.ColorAndOpacity(FLinearColor::Black)
 
 					[
-						SNew(SMultiLineEditableText)
-							.Text(FText::FromString(ChuckInstance->Code))
-
-							.OnTextChanged_Lambda([this](const FText& InText)
-								{
-									ChuckInstance->Code = *InText.ToString();
-								})
-	
+						SNew(SMultiLineEditableTextBox)
+							.Text_Lambda([this]() { return FText::FromString(*ChuckInstance->Code); })
 							.Marshaller(FChucKSyntaxHighlighterMarshaller::Create())
+							.AutoWrapText(true)
+							.Style(&InfoWidgetStyle)
 					]
 
 			];
