@@ -27,6 +27,7 @@
 //#include "Sfizz.h"
 #include <vector>
 #include "Chunreal.h"
+#include "ChuckInstance.h"
 //#include "MidiStreamTrackIsolatorNode.h"
 
 //#include "SfizzSynthNode.h"
@@ -60,6 +61,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 	namespace Inputs
 	{
 		DEFINE_INPUT_METASOUND_PARAM(Compile, "Compile", "Compiles the input ChucK code with the VM")
+		DEFINE_INPUT_METASOUND_PARAM(ChuckInstance, "Chuck Instance", "Chuck Instance")
 		//audio inputs
 		DEFINE_INPUT_METASOUND_PARAM(AudioInLeft, "Audio In Left", "optional audio input into ChucK vm");
 		DEFINE_INPUT_METASOUND_PARAM(AudioInRight, "Audio In Right", "optional audio input into ChucK vm");
@@ -107,16 +109,15 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		{
 			static const FVertexInterface Interface(
 				FInputVertexInterface(
-					TInputDataVertex<FTrigger>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::Compile)),
+
+					TInputDataVertex<FChuckInstance>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::ChuckInstance)),
 					//audio inputs
 					TInputDataVertex<FAudioBuffer>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::AudioInLeft)),
 					TInputDataVertex<FAudioBuffer>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::AudioInRight)),
 
 					TInputDataVertex<FMidiStream>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::MidiStream)),
 					TInputDataVertex<int32>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::TrackIndex), 0),
-					TInputDataVertex<int32>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::ChannelIndex), 0),
-					TInputDataVertex<FString>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::Code)),
-					TInputDataVertex<FString>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::ID))
+					TInputDataVertex<int32>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::ChannelIndex), 0)
 	
 				),
 				FOutputVertexInterface(
@@ -130,14 +131,14 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 		struct FInputs
 		{
-			FTriggerReadRef Compile;
+	
+			FChuckInstanceReadRef ChuckInstance;
 			FAudioBufferReadRef AudioInLeft;
 			FAudioBufferReadRef AudioInRight;
 			FMidiStreamReadRef MidiStream;
 			FInt32ReadRef TrackIndex;
 			FInt32ReadRef ChannelIndex;
-			FStringReadRef Code;
-			FStringReadRef ID;
+
 		};
 
 
@@ -148,16 +149,16 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			FInputs Inputs
 			{
 				//compile trigger
-				InputData.GetOrCreateDefaultDataReadReference<FTrigger>(Inputs::CompileName, InParams.OperatorSettings),
+
+				InputData.GetOrCreateDefaultDataReadReference<FChuckInstance>(Inputs::ChuckInstanceName, InParams.OperatorSettings),
 				//audio inputs
 				InputData.GetOrConstructDataReadReference<FAudioBuffer>(Inputs::AudioInLeftName, InParams.OperatorSettings),
 				InputData.GetOrConstructDataReadReference<FAudioBuffer>(Inputs::AudioInRightName, InParams.OperatorSettings),
 
 				InputData.GetOrConstructDataReadReference<FMidiStream>(Inputs::MidiStreamName),
 				InputData.GetOrCreateDefaultDataReadReference<int32>(Inputs::TrackIndexName, InParams.OperatorSettings),
-				InputData.GetOrCreateDefaultDataReadReference<int32>(Inputs::ChannelIndexName, InParams.OperatorSettings),
-				InputData.GetOrCreateDefaultDataReadReference<FString>(Inputs::CodeName, InParams.OperatorSettings),
-				InputData.GetOrCreateDefaultDataReadReference<FString>(Inputs::IDName, InParams.OperatorSettings)
+				InputData.GetOrCreateDefaultDataReadReference<int32>(Inputs::ChannelIndexName, InParams.OperatorSettings)
+
 			};
 
 			// outputs
@@ -179,15 +180,14 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		virtual void BindInputs(FInputVertexInterfaceData& InVertexData) override
 		{
 			//compile trigger
-			InVertexData.BindReadVertex(Inputs::CompileName, Inputs.Compile);
+			InVertexData.BindReadVertex(Inputs::ChuckInstanceName, Inputs.ChuckInstance);
 			//audio inputs
 			InVertexData.BindReadVertex(Inputs::AudioInLeftName, Inputs.AudioInLeft);
 			InVertexData.BindReadVertex(Inputs::AudioInRightName, Inputs.AudioInRight);
 			InVertexData.BindReadVertex(Inputs::MidiStreamName, Inputs.MidiStream);
 			InVertexData.BindReadVertex(Inputs::TrackIndexName, Inputs.TrackIndex);
 			InVertexData.BindReadVertex(Inputs::ChannelIndexName, Inputs.ChannelIndex);
-			InVertexData.BindReadVertex(Inputs::CodeName, Inputs.Code);
-			InVertexData.BindReadVertex(Inputs::IDName, Inputs.ID);
+
 		}
 
 		virtual void BindOutputs(FOutputVertexInterfaceData& InVertexData) override
@@ -198,42 +198,10 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 		void Reset(const FResetParams&)
 		{
-			//Create Chuck
-			theChuck = new ChucK();
+			//nullify the chuck pointer so that we can receive a new chuck instance
+			theChuck = nullptr;
+			ChuckID = FString();
 
-			//Initialize Chuck params
-			theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, FChunrealModule::GetChuckSampleRate());
-			theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
-			theChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, 2);
-			theChuck->setParam(CHUCK_PARAM_VM_ADAPTIVE, 0);
-			theChuck->setParam(CHUCK_PARAM_VM_HALT, (t_CKINT)(false));
-			//theChuck->setParam(CHUCK_PARAM_OTF_PORT, g_otf_port);
-			//theChuck->setParam(CHUCK_PARAM_OTF_ENABLE, (t_CKINT)TRUE);
-			//theChuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)dump);
-			theChuck->setParam(CHUCK_PARAM_AUTO_DEPEND, (t_CKINT)0);
-			//theChuck->setParam(CHUCK_PARAM_DEPRECATE_LEVEL, deprecate_level);
-			theChuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, false);
-			//theChuck->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
-			//theChuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
-			theChuck->setParam(CHUCK_PARAM_HINT_IS_REALTIME_AUDIO, true);
-
-			//Set log
-#if PRINT_CHUCK_LOG
-			theChuck->setStdoutCallback(FChunrealModule::printThisFromChuck);
-			theChuck->setStderrCallback(FChunrealModule::printThisFromChuck);
-			//theChuck->setLogLevel(CK_LOG_INFO);
-#endif
-
-//Start Chuck
-			theChuck->init();
-			theChuck->start();
-
-			//Store ChucK reference with ID
-			if (!((FString)(**Inputs.ID)).IsEmpty())
-			{
-				FChunrealModule::StoreChuckRef(theChuck, **Inputs.ID);
-				//FChunrealModule::Log(FString("Added ChucK ID: ") + **ID);
-			}
 		}
 
 
@@ -243,9 +211,9 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Destructor"));
 
 			//Remove ChucK reference with ID
-			if (!((FString)(**Inputs.ID)).IsEmpty())
+			if (!((FString)(*ChuckID)).IsEmpty())
 			{
-				FChunrealModule::RemoveChuckRef(**Inputs.ID);
+				FChunrealModule::RemoveChuckRef(*ChuckID);
 				//FChunrealModule::Log(FString("Removed ChucK ID: ") + **ID);
 			}
 
@@ -254,7 +222,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			delete outBufferInterleaved;
 
 			//Delete ChucK
-			delete theChuck;
+			//delete theChuck;
 			theChuck = nullptr;
 
 		}
@@ -278,8 +246,8 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				//FChunrealModule::SetChuckGlobalFloat(**Inputs.ID, "freq", (float)InData1);
 				UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Note On: %d"), InData1);
 		
-				FChunrealModule::SetChuckGlobalFloat(**Inputs.ID, "noteFreq", (float)InData1);
-				FChunrealModule::BroadcastChuckGlobalEvent(**Inputs.ID, "customEvent");
+				FChunrealModule::SetChuckGlobalFloat(*ChuckID, "noteFreq", (float)InData1);
+				FChunrealModule::BroadcastChuckGlobalEvent(*ChuckID, "customEvent");
 
 
 				//EpicSynth1.NoteOn(InData1, (float) InData2);
@@ -306,16 +274,30 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			const int32 BlockSizeFrames = AudioOutLeft->Num();
 			PendingNoteActions.Empty();
 
-			const FTrigger& trigger = *Inputs.Compile;
+
 			const float* inBufferLeft = Inputs.AudioInLeft->GetData();
 			const float* inBufferRight = Inputs.AudioInRight->GetData();
 			float* outBufferLeft = AudioOutLeft->GetData();
 			float* outBufferRight = AudioOutRight->GetData();
 			const int32 numSamples = Inputs.AudioInLeft->Num();
 
-			//Run ChucK code
-			if (trigger.IsTriggered())
+			//check that we received a valid chuck through the input
+			const FChuckInstance& ChuckInstance = *Inputs.ChuckInstance;
+			if (!ChuckInstance.IsInitialized())
 			{
+				UE_LOG(LogChucKMidiNode, Error, TEXT("Invalid Chuck Instance"));
+				return;
+			}
+
+			//get proxy 
+			
+
+			//Run ChucK code
+			if (theChuck == nullptr)
+			{
+				UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Constructor"));
+				theChuck = ChuckInstance.GetProxy()->Chuck;
+				ChuckID = ChuckInstance.GetProxy()->ChuckId;
 				if (hasSporkedOnce)
 				{
 					Chuck_Msg* msg = new Chuck_Msg;
@@ -326,7 +308,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				{
 					hasSporkedOnce = true;
 				}
-				FChunrealModule::CompileChuckCode(theChuck, TCHAR_TO_UTF8(**Inputs.Code));
+				//FChunrealModule::CompileChuckCode(theChuck, TCHAR_TO_UTF8(**Inputs.Code));
 
 
 				const float RampCallRateHz = (float)(1 / SampleRate) / (float)BlockSizeFrames;
@@ -543,6 +525,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 			//reference to chuck
 			ChucK* theChuck = nullptr;
+			FString ChuckID = FString();
 
 			bool bufferInitialized = false;
 			bool hasSporkedOnce = false;

@@ -17,6 +17,11 @@
 	"Installed": false,
 	"Modules": [
 		{
+		"Name" : "ChunrealEditor",
+		"Type" : "Editor"
+		},
+
+		{
 			"Name": "Chunreal",
 			"Type": "Runtime",
 			"LoadingPhase": "EarliestPossible",

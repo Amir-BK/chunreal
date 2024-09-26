@@ -44,8 +44,9 @@ class CHUNREAL_API FChuckInstanceProxy : public Audio::TProxyData<FChuckInstance
 public:
 	IMPL_AUDIOPROXY_CLASS(FChuckInstanceProxy);
 
-	explicit FChuckInstanceProxy(ChucK* InChuck)
-		: Chuck(InChuck)
+	explicit FChuckInstanceProxy(ChucK* InChuck, FString InChuckId)
+		: Chuck(InChuck),
+		ChuckId(InChuckId)
 	{
 	}
 
@@ -53,6 +54,7 @@ public:
 
 
 	ChucK* Chuck = nullptr;
+	FString ChuckId;
 
 
 };

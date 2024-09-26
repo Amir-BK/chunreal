@@ -52,5 +52,10 @@ inline TSharedPtr<Audio::IProxyData> UChuckInstance::CreateProxyData(const Audio
 		FChunrealModule::CompileChuckCode(Chuck, TCHAR_TO_UTF8(*Code));
 	}
 
-	return MakeShared<FChuckInstanceProxy>(Chuck);
+	bool bHasSuccesfullyCopiled = (bool) Chuck->vm_running();
+	FString CompileText = bHasSuccesfullyCopiled ? "Compiled" : "Failed to compile";
+
+	UE_LOG(LogTemp, Log, TEXT("ChucK compiled: %s"), *CompileText);
+
+	return MakeShared<FChuckInstanceProxy>(Chuck, Id);
 }
