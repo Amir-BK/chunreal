@@ -89,6 +89,8 @@ class CHUNREAL_API FChucKSyntaxHighlighterMarshaller : public FSyntaxHighlighter
 		//make styles for the rest of the syntax
 		FTextBlockStyle KeywordTextStyle = FTextBlockStyle(NormalTextStyle);
 		KeywordTextStyle.SetColorAndOpacity(FLinearColor(FColor(0xff006ab4)));
+		//make keyword style bold
+		KeywordTextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("Bold", 10));
 
 		FTextBlockStyle StringTextStyle = FTextBlockStyle(NormalTextStyle);
 		StringTextStyle.SetColorAndOpacity(FLinearColor(FColor(0xffdfd706)));
