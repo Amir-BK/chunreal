@@ -1,7 +1,11 @@
-#Purpose of fork -
-This fork encapsulates the Chunreal repo as a plugin instead of a Uproject to make it easier to clone into existing projects.
+# Purpose of fork -
+This fork encapsulates the chunreal repo as a plugin and makes some changes to the way the ChucK classes interact with Unreal.
 
-On top of that this fork adds a Chuck Midi Renderer metasound node that can be used to render harmonix midi stream through Chuck instances, more to come. 
+The UChuckInstance is a UObject that can be crated as an asset in the editor where ChucK code can be input (with a work in progress syntax highlighter), this object has an audio object proxy and a registered meta sound data type and can be passed directly to the new Chuck Midi Renderer metasound node, the ChucK is compiled when the object proxy is created and thus should be able to play once assigned to the metasound node.
+
+This repo is a work in progress and some aspects are still not working really well and might require redesign, for instance compiling the same UChuckInstance asset twice will lead to collision in the ChucK module as both will share the same ChuckID.
+
+The end result should be reusable chuck assets that can be used inside metasounds with no BP setup and without needing to trigger compilation on the audio thread, making it simple to use ChucK components as instruments or effects in metasounds or in unDAW: https://github.com/Amir-BK/unDAW
 
 
 
