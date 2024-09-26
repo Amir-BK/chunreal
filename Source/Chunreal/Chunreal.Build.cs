@@ -50,7 +50,9 @@ public class Chunreal : ModuleRules
             {
                 "CoreUObject",
                 "Engine",
-            }
+				"Slate",
+				"SlateCore"
+			}
             );
     }
 }
