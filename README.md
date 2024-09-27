@@ -25,9 +25,6 @@ Currently the midi renderer is not polyphonic, working on that, the midi rendere
 
 With these changes it is possible create re-usable chuck processor assets and use them in metasounds (as midi instruments or effects) without needing to interact with the metasound from blueprints.
 
-https://github.com/user-attachments/assets/3cbf0253-2bab-4e67-ba18-3aee5be4ad10
-
-
 All previously existing Chunreal nodes and methods still work.
 
 The changes also make it possible to use Chunk instruments and effects easily with unDAW and the metasound builder system - check out the unDAW repo - https://github.com/Amir-BK/unDAW
