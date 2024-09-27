@@ -158,6 +158,7 @@
 #define OS_IS_MACOSX 0
 #define OS_IS_WIN32 1
 #define TYPEOF_SF_COUNT_T off_t
+#define UNICODE 1
 #endif
 
 #if     defined (__CYGWIN__) // cygwin

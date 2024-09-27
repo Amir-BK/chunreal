@@ -199,6 +199,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		void Reset(const FResetParams&)
 		{
 			//nullify the chuck pointer so that we can receive a new chuck instance
+			delete theChuck;
 			theChuck = nullptr;
 			ChuckID = FString();
 
@@ -211,11 +212,11 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Destructor"));
 
 			//Remove ChucK reference with ID
-			if (!((FString)(*ChuckID)).IsEmpty())
-			{
-				FChunrealModule::RemoveChuckRef(*ChuckID);
-				//FChunrealModule::Log(FString("Removed ChucK ID: ") + **ID);
-			}
+			//if (!((FString)(*ChuckID)).IsEmpty())
+			//{
+			//	FChunrealModule::RemoveChuckRef(*ChuckID);
+			//	//FChunrealModule::Log(FString("Removed ChucK ID: ") + **ID);
+			//}
 
 			//Delete allocated memory
 			delete inBufferInterleaved;
