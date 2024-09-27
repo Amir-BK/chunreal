@@ -8,11 +8,27 @@ This repo is a work in progress and some aspects are still not working really we
 The end result should be reusable chuck assets that can be used inside metasounds with no BP setup and without needing to trigger compilation on the audio thread, making it simple to use ChucK components as instruments or effects in metasounds or in unDAW: https://github.com/Amir-BK/unDAW
 
 
+## New workflow!
+
+Instead of assigning the code via blueprints there's a new 'Chuck Processor' asset that can be created via the content browser - 
+![image](https://github.com/user-attachments/assets/27a6adf3-393b-4b7d-89fb-42ea7423ed2d)
+
+ChucK code can be added to this asset: 
+![image](https://github.com/user-attachments/assets/fe5e23cb-bd60-43b1-bf35-8ff2229b6858)
+
+Once this asset has been created and saved it can be used in a Metasound using the new Chuck Midi Renderer Node, despite its name this node doesn't _have_ to be used with Midi, although at the moment it is not being assigned a ChucK global id and thus can only receive new params via midi, this will be fixed soon.
+![image](https://github.com/user-attachments/assets/b0fbaca1-fe4a-43dd-b1bf-847059910656)
+
+https://github.com/user-attachments/assets/0d10b089-70f9-415d-a0bf-332c5cbbcfcc
+
+Currently the midi renderer is not polyphonic, working on that, the midi renderer node executes the 'noteEvent' and 'noteFreq' params on the chuck instance whenever it reads a note from the harmonix stream, you can see how to set up a simple instrument in the example midi renderer chuck processor provided in the project.
+
+With these changes it is possible create re-usable chuck processor assets and use them in metasounds (as midi instruments or effects) without needing to interact with the metasound from blueprints.
 
 https://github.com/user-attachments/assets/3cbf0253-2bab-4e67-ba18-3aee5be4ad10
 
 
-The node is largely used like the ChucK main node, check the example ck in the metasound asset to see how the midi is actually consumed right now, I hope to figure out a more robust method in the future. 
+All previously existing Chunreal nodes and methods still work.
 
 
 # Chunreal
