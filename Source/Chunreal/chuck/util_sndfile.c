@@ -8014,18 +8014,9 @@ psf_fopen (SF_PRIVATE *psf, const char *pathname, int open_mode)
 
 	wchar_t wpathname[MAX_PATH];
 	MultiByteToWideChar(CP_ACP, 0, pathname, -1, wpathname, MAX_PATH);
+#define pathname wpathname
 
-	handle = CreateFile(
-		wpathname,					/* pointer to name of the file */
-		dwDesiredAccess,			/* access (read-write) mode */
-		dwShareMode,				/* share mode */
-		0,							/* pointer to security attributes */
-		dwCreationDistribution,		/* how to create */
-		FILE_ATTRIBUTE_NORMAL,		/* file attributes (could use FILE_FLAG_SEQUENTIAL_SCAN) */
-		NULL						/* handle to file with attributes to copy */
-	);
-#elif
-	//convert to unicode
+#endif
 
 	handle = CreateFile(
 		pathname,					/* pointer to name of the file */
@@ -8037,7 +8028,9 @@ psf_fopen (SF_PRIVATE *psf, const char *pathname, int open_mode)
 		NULL						/* handle to file with attributes to copy */
 	);
 
-#endif
+#ifdef pathname
+#undef pathname
+#endif // pathname
 
 
 
