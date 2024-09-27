@@ -30,6 +30,13 @@ https://github.com/user-attachments/assets/3cbf0253-2bab-4e67-ba18-3aee5be4ad10
 
 All previously existing Chunreal nodes and methods still work.
 
+The changes also make it possible to use Chunk instruments and effects easily with unDAW and the metasound builder system - check out the unDAW repo - https://github.com/Amir-BK/unDAW
+
+https://github.com/user-attachments/assets/588dbf3c-8bdb-4e63-aa8b-cb0f1601bfd2
+
+
+
+
 
 # Chunreal
 ## ChucK - Strongly-timed Music Programming Language - in Unreal Engine 5
