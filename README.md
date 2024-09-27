@@ -1,7 +1,7 @@
 # Purpose of fork -
 This fork encapsulates the chunreal repo as a plugin and makes some changes to the way the ChucK classes interact with Unreal.
 
-The UChuckInstance is a UObject that can be crated as an asset in the editor where ChucK code can be input (with a work in progress syntax highlighter), this object has an audio object proxy and a registered meta sound data type and can be passed directly to the new Chuck Midi Renderer metasound node, the ChucK is compiled when the object proxy is created and thus should be able to play once assigned to the metasound node.
+The UChuckProcess is a UObject that can be created as an asset in the editor where ChucK code can be input (with a work in progress syntax highlighter), this object has an audio object proxy and a registered meta sound data type and can be passed directly to the new Chuck Midi Renderer metasound node, the ChucK is compiled when the object proxy is created and thus should be able to play once assigned to the metasound node.
 
 This repo is a work in progress and some aspects are still not working really well and might require redesign, for instance compiling the same UChuckInstance asset twice will lead to collision in the ChucK module as both will share the same ChuckID.
 
