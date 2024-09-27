@@ -34,10 +34,10 @@ void FChunrealModule::StartupModule()
     //chuckParent->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)dump);
     chuckParent->setParam(CHUCK_PARAM_AUTO_DEPEND, (t_CKINT)0);
     //chuckParent->setParam(CHUCK_PARAM_DEPRECATE_LEVEL, deprecate_level);
-    chuckParent->setParam(CHUCK_PARAM_CHUGIN_ENABLE, false);
+    chuckParent->setParam(CHUCK_PARAM_CHUGIN_ENABLE, true);
     //chuckParent->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
     //chuckParent->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
-    chuckParent->setParam(CHUCK_PARAM_HINT_IS_REALTIME_AUDIO, true);
+    chuckParent->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, true);
 
     //Start ChucK parent
     chuckParent->init();

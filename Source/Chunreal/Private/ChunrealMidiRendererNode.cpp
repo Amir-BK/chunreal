@@ -312,13 +312,15 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				//Chuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)dump);
 				NewChuck->setParam(CHUCK_PARAM_AUTO_DEPEND, (t_CKINT)0);
 				//Chuck->setParam(CHUCK_PARAM_DEPRECATE_LEVEL, deprecate_level);
-				NewChuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, false);
+				NewChuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, true);
 				//Chuck->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
 				//Chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
 				NewChuck->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, true);
 
 				NewChuck->init();
 				NewChuck->start();
+
+				NewChuck->setLogLevel(5);
 
 				if (hasSporkedOnce)
 				{
@@ -331,6 +333,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 					hasSporkedOnce = true;
 				}
 				FChunrealModule::CompileChuckCode(NewChuck, TCHAR_TO_UTF8(*ChuckInstance.GetProxy()->ChuckCode));
+				NewChuck->probeChugins();
 
 
 				const float RampCallRateHz = (float)(1 / SampleRate) / (float)BlockSizeFrames;
