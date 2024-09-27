@@ -32,7 +32,7 @@ public:
 	}
 	FText GetName() const override
 	{
-		return INVTEXT("ChucK Instance");
+		return INVTEXT("ChucK Processor");
 	}
 	FColor GetTypeColor() const override
 	{
