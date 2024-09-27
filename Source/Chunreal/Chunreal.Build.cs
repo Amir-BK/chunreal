@@ -42,8 +42,10 @@ public class Chunreal : ModuleRules
                 "Harmonix",
                 "HarmonixMetasound",
                 "MetasoundStandardNodes",
-				"AudioExtensions"
-            }
+				"AudioExtensions",
+				"AudioMixer",
+				"AudioMixerCore"
+			}
             );
 
         PrivateDependencyModuleNames.AddRange(

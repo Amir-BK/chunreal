@@ -80,7 +80,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		DEFINE_OUTPUT_METASOUND_PARAM(AudioOutRight, "Audio Out Right", "Right output of Sfizz Synth");
 	}
 
-	class FEpic1SynthMetasoundOperator final : public TExecutableOperator<FEpic1SynthMetasoundOperator>
+	class ChunrealMetasoundMidiOperator final : public TExecutableOperator<ChunrealMetasoundMidiOperator>
 	{
 	public:
 		static const FNodeClassMetadata& GetNodeInfo()
@@ -165,10 +165,10 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			FOutputVertexInterface OutputInterface;
 
 
-			return MakeUnique<FEpic1SynthMetasoundOperator>(InParams, MoveTemp(Inputs));
+			return MakeUnique<ChunrealMetasoundMidiOperator>(InParams, MoveTemp(Inputs));
 		}
 
-		FEpic1SynthMetasoundOperator(const FBuildOperatorParams& InParams, FInputs&& InInputs)
+		ChunrealMetasoundMidiOperator(const FBuildOperatorParams& InParams, FInputs&& InInputs)
 			: Inputs(MoveTemp(InInputs))
 			, SampleRate(InParams.OperatorSettings.GetSampleRate())
 			, AudioOutLeft(FAudioBufferWriteRef::CreateNew(InParams.OperatorSettings))
@@ -206,7 +206,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 
 		//destructor
-		virtual ~FEpic1SynthMetasoundOperator()
+		virtual ~ChunrealMetasoundMidiOperator()
 		{
 			UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Destructor"));
 
@@ -244,10 +244,12 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				break;
 			case GNoteOn:
 				//FChunrealModule::SetChuckGlobalFloat(**Inputs.ID, "freq", (float)InData1);
-				UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Note On: %d"), InData1);
+				//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Note On: %d"), InData1);
 		
-				FChunrealModule::SetChuckGlobalFloat(*ChuckID, "noteFreq", (float)InData1);
-				FChunrealModule::BroadcastChuckGlobalEvent(*ChuckID, "customEvent");
+				//by adressing the ChucK pointer directly we may avoid all the ID related collision
+				theChuck->globals()->setGlobalFloat("noteFreq", (float)InData1);
+				theChuck->globals()->broadcastGlobalEvent("noteEvent");
+
 
 
 				//EpicSynth1.NoteOn(InData1, (float) InData2);
@@ -296,8 +298,28 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			if (theChuck == nullptr)
 			{
 				UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Constructor"));
-				theChuck = ChuckInstance.GetProxy()->Chuck;
-				ChuckID = ChuckInstance.GetProxy()->ChuckId;
+
+				auto NewChuck = new ChucK();
+
+				//Initialize Chuck params
+				NewChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, SampleRate);
+				NewChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
+				NewChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, 2);
+				NewChuck->setParam(CHUCK_PARAM_VM_ADAPTIVE, 0);
+				NewChuck->setParam(CHUCK_PARAM_VM_HALT, (t_CKINT)(false));
+				//Chuck->setParam(CHUCK_PARAM_OTF_PORT, g_otf_port);
+				//Chuck->setParam(CHUCK_PARAM_OTF_ENABLE, (t_CKINT)TRUE);
+				//Chuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)dump);
+				NewChuck->setParam(CHUCK_PARAM_AUTO_DEPEND, (t_CKINT)0);
+				//Chuck->setParam(CHUCK_PARAM_DEPRECATE_LEVEL, deprecate_level);
+				NewChuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, false);
+				//Chuck->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
+				//Chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
+				NewChuck->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, true);
+
+				NewChuck->init();
+				NewChuck->start();
+
 				if (hasSporkedOnce)
 				{
 					Chuck_Msg* msg = new Chuck_Msg;
@@ -308,7 +330,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				{
 					hasSporkedOnce = true;
 				}
-				//FChunrealModule::CompileChuckCode(theChuck, TCHAR_TO_UTF8(**Inputs.Code));
+				FChunrealModule::CompileChuckCode(NewChuck, TCHAR_TO_UTF8(*ChuckInstance.GetProxy()->ChuckCode));
 
 
 				const float RampCallRateHz = (float)(1 / SampleRate) / (float)BlockSizeFrames;
@@ -327,6 +349,8 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 				CurrentTrackNumber = *Inputs.TrackIndex;
 				CurrentChannelNumber = *Inputs.ChannelIndex;
+
+				theChuck = NewChuck;
 			}
 
 			//Make interleaved buffers
@@ -538,7 +562,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 	{
 	public:
 		explicit FChuckMidiRenderer(const FNodeInitData& InInitData)
-			: FNodeFacade(InInitData.InstanceName, InInitData.InstanceID, TFacadeOperatorClass<FEpic1SynthMetasoundOperator>())
+			: FNodeFacade(InInitData.InstanceName, InInitData.InstanceID, TFacadeOperatorClass<ChunrealMetasoundMidiOperator>())
 		{}
 		virtual ~FChuckMidiRenderer() override = default;
 	};

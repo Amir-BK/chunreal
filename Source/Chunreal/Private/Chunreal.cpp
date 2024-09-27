@@ -56,7 +56,7 @@ void FChunrealModule::StartupModule()
     //Register MetaSound Nodes
     FMetasoundFrontendRegistryContainer::Get()->RegisterPendingNodes();
 
-	Metasound::RegisterDataTypeWithFrontend<Metasound::FChuckInstance, Metasound::ELiteralType::UObjectProxy, UChuckInstance>();
+	Metasound::RegisterDataTypeWithFrontend<Metasound::FChuckInstance, Metasound::ELiteralType::UObjectProxy, UChuckProcessor>();
 }
 
 void FChunrealModule::ShutdownModule()

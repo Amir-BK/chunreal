@@ -14,8 +14,8 @@
 /**
  * 
  */
-UCLASS(BlueprintType, Blueprintable)
-class CHUNREAL_API UChuckInstance : public UObject, public IAudioProxyDataFactory
+UCLASS(BlueprintType)
+class CHUNREAL_API UChuckProcessor : public UObject, public IAudioProxyDataFactory
 {
 	GENERATED_BODY()
 
@@ -23,11 +23,16 @@ class CHUNREAL_API UChuckInstance : public UObject, public IAudioProxyDataFactor
 	virtual TSharedPtr<Audio::IProxyData> CreateProxyData(const Audio::FProxyDataInitParams& InitParams) override;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ChucK", meta = (ExposeOnSpawn = true))
-	FString Id;
 
-	UPROPERTY(BlueprintReadWrite, Category = "ChucK", meta = (MultiLine = true, ExposeOnSpawn = true))
+
+	bool CompileChuckCode();
+
+	UPROPERTY(BlueprintReadWrite, Category = "Chuck", meta = (MultiLine = true, ExposeOnSpawn = true))
 	FString Code;
+
+	//if true, the ChucK will only be compiled once and shared with all instantiations via metasounds 
+	UPROPERTY(BlueprintReadWrite, Category = "Chuck", meta = (ExposeOnSpawn = true), EditAnywhere)
+	bool bShareChuck = false;
 
 private:
 	ChucK* Chuck = nullptr;
@@ -44,17 +49,16 @@ class CHUNREAL_API FChuckInstanceProxy : public Audio::TProxyData<FChuckInstance
 public:
 	IMPL_AUDIOPROXY_CLASS(FChuckInstanceProxy);
 
-	explicit FChuckInstanceProxy(ChucK* InChuck, FString InChuckId)
-		: Chuck(InChuck),
-		ChuckId(InChuckId)
+	explicit FChuckInstanceProxy(FString InChuckCode)
+		: 
+		ChuckCode(InChuckCode)
 	{
 	}
 
 	FChuckInstanceProxy(const FChuckInstanceProxy& Other) = default;
 
 
-	ChucK* Chuck = nullptr;
-	FString ChuckId;
+	FString ChuckCode;
 
 
 };

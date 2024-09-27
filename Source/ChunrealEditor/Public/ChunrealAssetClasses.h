@@ -19,6 +19,7 @@
 #include "ChucKSyntaxHighlighter.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
+#include "ScopedTransaction.h"
 #include "ChunrealAssetClasses.generated.h"
 
 class FChuckInstanceAssetActions : public FAssetTypeActions_Base
@@ -27,7 +28,7 @@ public:
 
 	UClass* GetSupportedClass() const override
 	{
-		return UChuckInstance::StaticClass();
+		return UChuckProcessor::StaticClass();
 	}
 	FText GetName() const override
 	{
@@ -63,17 +64,20 @@ public:
 		TArray<TWeakObjectPtr<UObject>> Outers;
 		DetailBuilder.GetObjectsBeingCustomized(Outers);
 		if (Outers.Num() == 0) return;
-		ChuckInstance = Cast<UChuckInstance>(Outers[0].Get());
+		ChuckInstance = Cast<UChuckProcessor>(Outers[0].Get());
 
 		//add category "ChucK" and add a MultiLineEditableText to is with the ChucK Marshaller
 		IDetailCategoryBuilder& ChucKCategory = DetailBuilder.EditCategory("Chuck");
 		ChucKCategory.AddCustomRow(FText::FromString("ChucK Code"))
 			.NameContent()
+			.MaxDesiredWidth(150)
 			[
 				SNew(STextBlock)
 					.Text(FText::FromString("ChucK Code"))
 			]
 			.ValueContent()
+			.MinDesiredWidth(800)
+			.MaxDesiredWidth(600)
 			[
 				SNew(SBorder)
 					.BorderBackgroundColor(FLinearColor::Black)
@@ -81,9 +85,15 @@ public:
 					[
 						SNew(SMultiLineEditableTextBox)
 							.Text_Lambda([this]() { return FText::FromString(*ChuckInstance->Code); })
+							.OnTextCommitted_Lambda([this](const FText& InText, ETextCommit::Type CommitType)
+								{
+									FScopedTransaction Transaction(INVTEXT("Update Chuck Code"));
+									ChuckInstance->Code = InText.ToString();
+									ChuckInstance->MarkPackageDirty();
+								})
 							.Marshaller(FChucKSyntaxHighlighterMarshaller::Create())
-							.AutoWrapText(true)
 							.Style(&InfoWidgetStyle)
+							.AlwaysShowScrollbars(true)
 					]
 
 			];
@@ -93,7 +103,7 @@ public:
 	static TSharedRef<IDetailCustomization> MakeInstance() { return MakeShareable(new FChuckInstanceDetails()); }
 
 private:
-	UChuckInstance* ChuckInstance = nullptr;
+	UChuckProcessor* ChuckInstance = nullptr;
 
 };
 
@@ -111,7 +121,7 @@ public:
 	//~ UFactory Interface
 	virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn, FName CallingContext) override
 	{
-		UChuckInstance* NewInstance = NewObject<UChuckInstance>(InParent, InClass, InName, Flags);
+		UChuckProcessor* NewInstance = NewObject<UChuckProcessor>(InParent, InClass, InName, Flags);
 		return NewInstance;
 	}
 
@@ -124,6 +134,6 @@ public:
 	{
 		bCreateNew = true;
 		bEditAfterNew = true;
-		SupportedClass = UChuckInstance::StaticClass();
+		SupportedClass = UChuckProcessor::StaticClass();
 	}
 };
