@@ -222,7 +222,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			delete outBufferInterleaved;
 
 			//Delete ChucK
-			//delete theChuck;
+			delete theChuck;
 			theChuck = nullptr;
 
 		}
