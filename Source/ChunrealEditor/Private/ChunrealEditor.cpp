@@ -9,6 +9,8 @@
 
 #define LOCTEXT_NAMESPACE "FChunrealEditor"
 
+static const FName CodeEditorTabName(TEXT("ChucKEditor"));
+
 void FChunrealEditor::StartupModule()
 {
 	ChuckInstanceActionsSharedPtr = MakeShared<FChuckInstanceAssetActions>();
@@ -16,6 +18,17 @@ void FChunrealEditor::StartupModule()
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	PropertyModule.RegisterCustomClassLayout("ChuckProcessor", FOnGetDetailCustomizationInstance::CreateStatic(&FChuckInstanceDetails::MakeInstance));
+
+	//code editor - 
+	FCodeEditorStyle::Initialize();
+
+	// Register a tab spawner so that our tab can be automatically restored from layout files
+	FGlobalTabmanager::Get()->RegisterTabSpawner(CodeEditorTabName, FOnSpawnTab::CreateStatic(&FChunrealEditor::SpawnCodeEditorTab))
+		.SetDisplayName(LOCTEXT("CodeEditorTabTitle", "Edit Source Code"))
+		.SetTooltipText(LOCTEXT("CodeEditorTooltipText", "Open the Code Editor tab."))
+		.SetIcon(FSlateIcon(FCodeEditorStyle::Get().GetStyleSetName(), "CodeEditor.TabIcon"));
+
+	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FChunrealEditor::OnPostEngineInit);
 	
 
 };
@@ -24,6 +37,15 @@ void FChunrealEditor::ShutdownModule()
 {
 	if (!FModuleManager::Get().IsModuleLoaded("AssetTools")) return;
 	FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(ChuckInstanceActionsSharedPtr.ToSharedRef());
+
+	//code editor -
+			// Unregister the tab spawner
+	FGlobalTabmanager::Get()->UnregisterTabSpawner(CodeEditorTabName);
+
+	FCoreDelegates::OnPostEngineInit.RemoveAll(this);
+	UToolMenus::UnregisterOwner(this);
+
+	FCodeEditorStyle::Shutdown();
 }
 
 
