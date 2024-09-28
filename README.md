@@ -1,3 +1,7 @@
+Status:
+1. Fixed file loading on windows (doesn't work on main repo) - if you use a relative path it searches for files inside the compiled engine binary folder, which isn't great, I'm trying to make it respect the assigned working directory
+2. Reading/wrigin global variables via ChuckID is not possible when using the 'new style' processor
+
 # Purpose of fork -
 This fork encapsulates the chunreal repo as a plugin and makes some changes to the way the ChucK classes interact with Unreal.
 
@@ -6,6 +10,7 @@ The UChuckProcess is a UObject that can be created as an asset in the editor whe
 This repo is a work in progress and some aspects are still not working really well and might require redesign.
 
 The end result should be reusable chuck assets that can be used inside metasounds with no BP setup and without needing to trigger compilation on the audio thread, making it simple to use ChucK components as instruments or effects in metasounds or in unDAW: https://github.com/Amir-BK/unDAW
+
 
 
 ## New workflow!
