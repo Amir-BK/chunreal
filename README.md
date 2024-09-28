@@ -37,7 +37,7 @@ The changes also make it possible to use Chunk instruments and effects easily wi
 https://github.com/user-attachments/assets/588dbf3c-8bdb-4e63-aa8b-cb0f1601bfd2
 
 ## Loading samples and files from disk
-The 'working directory' is currently set to "chunreal/WorkingDirectory" but when you try to load a sample with a relative unqualified path it will still search for it in the engine binary folder, you can make chucK looking for samples in the working dir with the following syntax:
+The 'working directory' is currently set to "chunreal/WorkingDirectory" but when you try to load a sample with a relative unqualified path it will still search for it in the engine binary folder, you can make chucK look for samples in the working dir with the following syntax:
 
 ```
 me.dir() + "kick_01.wav" => kick.read;
