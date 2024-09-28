@@ -32,6 +32,9 @@ public:
     //reference to ChucK parent
     inline static ChucK* chuckParent = nullptr;
 
+	//working directory path
+	FString workingDirectory;
+
     //Get ChucK sample rate
     static t_CKINT GetChuckSampleRate();
     //Set ChucK sample rate

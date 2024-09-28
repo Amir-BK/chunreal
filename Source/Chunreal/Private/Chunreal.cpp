@@ -11,6 +11,8 @@
 #include "Chunreal.h"
 #include "MetasoundFrontendRegistries.h"
 #include "MetasoundDataTypeRegistrationMacro.h"
+#include "Interfaces/IPluginManager.h"
+#include "HAL/FileManager.h"
 #include "ChuckInstance.h"
 
 #define LOCTEXT_NAMESPACE "FChunrealModule"
@@ -22,7 +24,10 @@ void FChunrealModule::StartupModule()
 {
     //Create Chuck
     chuckParent = new ChucK();
+	FString BaseDir = IPluginManager::Get().FindPlugin(TEXT("Chunreal"))->GetBaseDir();
+	workingDirectory = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::Combine(*BaseDir, TEXT("WorkingDirectory")));
 
+	chuckParent->setParam(CHUCK_PARAM_WORKING_DIRECTORY, TCHAR_TO_UTF8(*workingDirectory));
     //Initialize Chuck params
     chuckParent->setParam(CHUCK_PARAM_SAMPLE_RATE, FChunrealModule::GetChuckSampleRate());
     chuckParent->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
@@ -38,6 +43,9 @@ void FChunrealModule::StartupModule()
     //chuckParent->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
     //chuckParent->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
     chuckParent->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, true);
+	//set working directory as plugin directory //WorkingDir
+
+	//chuckParent->vm()->add
 
     //Start ChucK parent
     chuckParent->init();

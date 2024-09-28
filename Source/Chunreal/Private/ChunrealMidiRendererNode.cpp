@@ -301,7 +301,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Constructor"));
 
 				auto NewChuck = new ChucK();
-
+				NewChuck->setLogLevel(5);
 				//Initialize Chuck params
 				NewChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, SampleRate);
 				NewChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
@@ -318,10 +318,14 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				//Chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
 				NewChuck->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, true);
 
+				//Set working directory
+				FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
+				NewChuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, TCHAR_TO_UTF8(*ChunrealModule.workingDirectory));
+
 				NewChuck->init();
 				NewChuck->start();
 
-				NewChuck->setLogLevel(5);
+				
 
 				if (hasSporkedOnce)
 				{

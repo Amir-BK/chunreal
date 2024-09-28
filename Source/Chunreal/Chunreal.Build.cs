@@ -55,7 +55,8 @@ public class Chunreal : ModuleRules
                 "Engine",
 				"Slate",
 				"SlateCore",
-				"UMG"
+				"UMG",
+				"Projects"
 			}
             );
     }
