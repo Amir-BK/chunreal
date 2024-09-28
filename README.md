@@ -1,6 +1,6 @@
 Status:
 1. Fixed file loading on windows (doesn't work on main repo).
-2. Reading/wrigin global variables via ChuckID is not possible when using the 'new style' processor
+2. Reading/writing global variables via ChuckID is not possible when using the 'new style' processor
 
 # Purpose of fork -
 This fork encapsulates the chunreal repo as a plugin and makes some changes to the way the ChucK classes interact with Unreal.
