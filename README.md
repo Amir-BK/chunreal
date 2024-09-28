@@ -1,5 +1,5 @@
 Status:
-1. Fixed file loading on windows (doesn't work on main repo) - if you use a relative path it searches for files inside the compiled engine binary folder, which isn't great, I'm trying to make it respect the assigned working directory
+1. Fixed file loading on windows (doesn't work on main repo).
 2. Reading/wrigin global variables via ChuckID is not possible when using the 'new style' processor
 
 # Purpose of fork -
@@ -36,7 +36,14 @@ The changes also make it possible to use Chunk instruments and effects easily wi
 
 https://github.com/user-attachments/assets/588dbf3c-8bdb-4e63-aa8b-cb0f1601bfd2
 
+## Loading samples and files from disk
+The 'working directory' is currently set to "chunreal/WorkingDirectory" but when you try to load a sample with a relative unqualified path it will still search for it in the engine binary folder, you can make chucK looking for samples in the working dir with the following syntax:
 
+```
+me.dir() + "kick_01.wav" => kick.read;
+```
+
+the working directory path can be changed in code, it is assigned to the ChucK when it is instantiated (so in the midi renderer node code), it can be exposed as a config variable and assigned per project, I'll eventually get to that, for now the WorkingDirectory inside the plugin seems usable.
 
 
 
