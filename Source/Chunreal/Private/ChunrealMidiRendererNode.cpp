@@ -292,7 +292,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			case GControl:
 				break;
 			case GPitch:
-				UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Pitch Bend: %d"), InData1);
+				//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Pitch Bend: %d"), InData1);
 				
 				//PitchBendRamper.SetTarget(FMidiMsg::GetPitchBendFromData(InData1, InData2));
 				break;
@@ -391,11 +391,6 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 				bufferInitialized = true;
 			}
-			for (int i = 0; i < numSamples; i++)
-			{
-				 *(inBufferInterleaved + i * 2) = *(inBufferLeft + i);
-				 *(inBufferInterleaved + i * 2 + 1) = *(inBufferRight + i);
-			}
 
 			
 			StuckNoteGuard.UnstickNotes(*Inputs.MidiStream, [this](const FMidiStreamEvent& Event)
@@ -463,6 +458,14 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			//apply pitchbend
 
 			PitchBendRamper.Ramp();
+
+			//we need to copy the node's input data to chuck's input data
+			for (int i = 0; i < BlockSizeFrames; i++)
+			{
+				*(inBufferInterleaved + i * 2) = *(inBufferLeft + i);
+				*(inBufferInterleaved + i * 2 + 1) = *(inBufferRight + i);
+
+			}
 
 			//Process samples by ChucK
 			FChunrealModule::RunChuck(theChuck, (float*)inBufferInterleaved, outBufferInterleaved, BlockSizeFrames);

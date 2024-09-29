@@ -70,6 +70,19 @@ FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEve
 		}
 		
 	}
+
+	//if key is enter key, we want to handle it ourselves to steal it from the editor
+	if (InKeyEvent.GetKey() == EKeys::Enter)
+	{
+		if (!IsTextReadOnly())
+		{
+			//insert new line
+			FString String;
+			String.AppendChar(TEXT('\n'));
+			InsertTextAtCursor(String);
+			return FReply::Handled();
+		}
+	}
 	
 	return FReply::Unhandled();
 	//return FReply::Unhandled();
