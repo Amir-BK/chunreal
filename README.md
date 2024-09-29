@@ -1,6 +1,10 @@
 Status:
 1. Fixed file loading on windows (doesn't work on main repo).
 2. Reading/writing global variables via ChuckID is not possible when using the 'new style' processor
+3. work in progress - real time chuck code editor:
+
+https://github.com/user-attachments/assets/47b4a559-2051-481e-b894-cdd233e647bf
+
 
 # Purpose of fork -
 This fork encapsulates the chunreal repo as a plugin and makes some changes to the way the ChucK classes interact with Unreal.
