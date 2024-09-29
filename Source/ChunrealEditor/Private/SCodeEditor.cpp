@@ -5,6 +5,7 @@
 #include "Widgets/Layout/SGridPanel.h"
 #include "CodeProjectItem.h"
 #include "CPPRichTextSyntaxHighlighterTextLayoutMarshaller.h"
+#include "ChucKSyntaxHighlighter.h"
 #include "SCodeEditableText.h"
 
 
@@ -20,10 +21,8 @@ void SCodeEditor::Construct(const FArguments& InArgs, UCodeProjectItem* InCodePr
 
 	FString FileText = "File Loading, please wait";
 	FFileHelper::LoadFileToString(FileText, *InCodeProjectItem->Path);
-
-	TSharedRef<FCPPRichTextSyntaxHighlighterTextLayoutMarshaller> RichTextMarshaller = FCPPRichTextSyntaxHighlighterTextLayoutMarshaller::Create(
-			FCPPRichTextSyntaxHighlighterTextLayoutMarshaller::FSyntaxTextStyle()
-			);
+	//TODO: probably check the type of the file even though we only care about chucks for now
+	TSharedRef<FChucKSyntaxHighlighterMarshaller> RichTextMarshaller = FChucKSyntaxHighlighterMarshaller::Create();
 
 	HorizontalScrollbar = 
 		SNew(SScrollBar)
@@ -45,7 +44,7 @@ void SCodeEditor::Construct(const FArguments& InArgs, UCodeProjectItem* InCodePr
 			.FillRow(0, 1.0f)
 			+SGridPanel::Slot(0, 0)
 			[
-				SAssignNew(CodeEditableText, SCodeEditableText)
+				SAssignNew(CodeEditableText, SBkCodeEditableText)
 				.Text(FText::FromString(FileText))
 				.Marshaller(RichTextMarshaller)
 				.HScrollBar(HorizontalScrollbar)
@@ -98,7 +97,28 @@ void SCodeEditor::GotoLineAndColumn(int32 LineNumber, int32 ColumnNumber)
 
 void SCodeEditor::InsertTextAtCursor(const FString& Text)
 {
-	CodeEditableText->InsertTextAtCursor(FText::FromString(Text));
+	//CodeEditableText->InsertTextAtCursor(FText::FromString(Text));
+	InsertTabOnAllSelectedLines();
+}
+
+void SCodeEditor::InsertTabOnAllSelectedLines()
+{
+	//get the selection range
+	auto SelectionRange = CodeEditableText->GetSelection();
+	if (SelectionRange.GetBeginning() != SelectionRange.GetEnd())
+	{
+		//get the start and end line
+		int32 StartLine = SelectionRange.GetBeginning().GetLineIndex();
+		int32 EndLine = SelectionRange.GetEnd().GetLineIndex();
+
+		//iterate over the lines and insert a tab
+		for (int32 LineIndex = StartLine; LineIndex <= EndLine; ++LineIndex)
+		{
+			FTextLocation Location(LineIndex, 0);
+			CodeEditableText->GoTo(Location);
+			CodeEditableText->InsertTextAtCursor(FText::FromString("\t"));
+		}
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

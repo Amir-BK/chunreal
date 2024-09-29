@@ -4,7 +4,7 @@
 
 #include "Widgets/SCompoundWidget.h"
 
-class SCodeEditableText;
+class SBkCodeEditableText;
 class SScrollBar;
 
 class SCodeEditor : public SCompoundWidget
@@ -23,6 +23,10 @@ public:
 
 	void InsertTextAtCursor(const FString& Text);
 
+	void InsertTabOnAllSelectedLines();
+
+	void RemoveTabOnAllSelectedLines();
+
 private:
 	void OnTextChanged(const FText& NewText);
 
@@ -32,7 +36,7 @@ protected:
 	TSharedPtr<SScrollBar> HorizontalScrollbar;
 	TSharedPtr<SScrollBar> VerticalScrollbar;
 
-	TSharedPtr<class SCodeEditableText> CodeEditableText;
+	TSharedPtr<class SBkCodeEditableText> CodeEditableText;
 
 	mutable bool bDirty;
 };

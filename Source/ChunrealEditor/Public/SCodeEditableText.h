@@ -8,9 +8,9 @@ class SScrollBar;
 
 class ITextLayoutMarshaller;
 
-class SCodeEditableText : public SMultiLineEditableText
+class SBkCodeEditableText : public SMultiLineEditableText
 {
-	SLATE_BEGIN_ARGS( SCodeEditableText )
+	SLATE_BEGIN_ARGS( SBkCodeEditableText )
 	{}
 		/** The initial text that will appear in the widget. */
 		SLATE_ATTRIBUTE(FText, Text)
@@ -35,4 +35,8 @@ private:
 	virtual FReply OnKeyChar(const FGeometry& MyGeometry,const FCharacterEvent& InCharacterEvent) override;
 
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
+
+	void RemoveTabOnAllSelectedLines();
+
+	void RemoveTabFromCurrentLine();
 };
