@@ -83,6 +83,7 @@ struct FDirectoryScannerCommand : public IQueuedWork
 bool FDirectoryScanner::Tick()
 {
 	bool bAddedData = false;
+
 	for (int32 CommandIndex = 0; CommandIndex < CommandQueue.Num(); ++CommandIndex)
 	{
 		FDirectoryScannerCommand& Command = *CommandQueue[CommandIndex];

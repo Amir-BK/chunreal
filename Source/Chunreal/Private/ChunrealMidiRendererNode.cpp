@@ -321,9 +321,10 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			}
 
 			//get proxy 
-			if (ChuckProcessor != ChuckInstance.GetProxy()->ChuckProcessor)
+			if (CurrentChuckGuid != ChuckInstance.GetProxy()->ChuckProcessor->ChuckGuid)
 			{
 				ChuckProcessor = ChuckInstance.GetProxy()->ChuckProcessor;
+				CurrentChuckGuid = ChuckProcessor->ChuckGuid;
 		
 				DeinterleavedBuffer.resize(2 * BlockSizeFrames);
 				DecodedAudioDataBuffer.resize(2 * BlockSizeFrames);
@@ -566,6 +567,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			bool hasSporkedOnce = false;
 
 			UChuckProcessor* ChuckProcessor = nullptr;
+			FGuid CurrentChuckGuid;
 
 	
 

@@ -11,6 +11,8 @@
 #include "Widgets/Docking/SDockTab.h"
 #include "CodeProjectEditorToolbar.h"
 #include "WorkflowOrientedApp/ApplicationMode.h"
+#include "Interfaces/IPluginManager.h"
+#include "HAL/FileManager.h"
 #include "WorkflowOrientedApp/WorkflowUObjectDocuments.h"
 
 
@@ -44,6 +46,7 @@ public:
 		, CodeProjectEditorPtr(InCodeProjectEditorPtr)
 		, OnCreateCodeEditorWidget(CreateCodeEditorWidgetCallback)
 	{
+
 	}
 
 	virtual void OnTabActivated(TSharedPtr<SDockTab> Tab) const override

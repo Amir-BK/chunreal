@@ -30,8 +30,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Chuck")
 	FString SourcePath;
 
+	UPROPERTY()
+	FGuid ChuckGuid;
+
 
 	bool CompileChuckCode();
+
+	bool bNeedsRecompile = false;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Chuck", meta = (MultiLine = true, ExposeOnSpawn = true))
 	FString Code;

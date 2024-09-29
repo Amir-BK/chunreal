@@ -32,7 +32,32 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-	void ScanWorkingDirectoryAndUpdateRuntimeAssets()
+	static UChuckProcessor* GetProcessorProxyForChuck(const FString& InChuckPath)
+	{
+		const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+		TArray<FAssetData> AssetData;
+		AssetRegistryModule.Get().GetAssetsByClass(UChuckProcessor::StaticClass()->GetClassPathName(), AssetData, true);
+		FString ChuckName = FPaths::GetBaseFilename(InChuckPath);
+		ChuckName.RemoveSpacesInline();
+
+		FString ChuckAssetPath = TEXT("/Chunreal/Chunreal/RuntimeChucks/") + ChuckName + TEXT(".") + ChuckName;
+		FName ChuckAssetName = FName(*ChuckAssetPath);
+		int ExistingAssetIndex = AssetData.IndexOfByPredicate([&ChuckAssetName](const FAssetData& AssetData)
+			{
+				return AssetData.ObjectPath.IsEqual(ChuckAssetName);
+			});
+
+		if (ExistingAssetIndex != INDEX_NONE)
+		{
+			return Cast<UChuckProcessor>(AssetData[ExistingAssetIndex].GetAsset());
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+	static void ScanWorkingDirectoryAndUpdateRuntimeAssets()
 	{
 		// so, in theory this will only run when we have an editor, but we don't want to block completly the option to add chucks without an editor, we'll see
 		// to avoid messing with race conditions for now (in the future probably a delegate from the runtime module), just assume we do nothing in the runtime
@@ -53,6 +78,7 @@ public:
 		{
 			//we need the file name without the extensions
 			FString ChuckName = FPaths::GetBaseFilename(ChuckFile);
+			ChuckName.RemoveSpacesInline();
 
 			//we may already have an asset for this chuck file
 			FString ChuckAssetPath = TEXT("/Chunreal/Chunreal/RuntimeChucks/") + ChuckName + TEXT(".") + ChuckName;
@@ -78,6 +104,7 @@ public:
 				ChuckProcessor = Cast<UChuckProcessor>(ChuckNewObject);
 				ChuckProcessor->bIsAutoManaged = true;
 				ChuckProcessor->SourcePath = WorkingDir + "/" + ChuckFile;
+				ChuckProcessor->ChuckGuid = FGuid::NewGuid();
 				AssetRegistryModule.Get().AssetCreated(ChuckProcessor);
 			}
 

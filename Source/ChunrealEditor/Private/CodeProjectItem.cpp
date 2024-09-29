@@ -3,11 +3,18 @@
 #include "CodeProjectItem.h"
 #include "UObject/Package.h"
 #include "IDirectoryWatcher.h"
+#include "DirectoryWatcherModule.h"
 #include "DirectoryScanner.h"
+#include "Interfaces/IPluginManager.h"
+#include "ChuckInstance.h"
+#include "ChunrealEditor.h"
+#include "HAL/FileManager.h"
 
 UCodeProjectItem::UCodeProjectItem(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	FString BaseDir = IPluginManager::Get().FindPlugin(TEXT("Chunreal"))->GetBaseDir();
+	Path = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::Combine(*BaseDir, TEXT("WorkingDirectory")));
 }
 
 void UCodeProjectItem::RescanChildren()
@@ -63,8 +70,8 @@ void UCodeProjectItem::HandleDirectoryScanned(const FString& InPathName, ECodePr
 			FDirectoryScanner::AddDirectory(InPathName, FOnDirectoryScanned::CreateUObject(NewItem, &UCodeProjectItem::HandleDirectoryScanned));
 
 			// @TODO: now register for any changes to this directory if needed
-		//	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::Get().LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-		//	DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(InPathName, IDirectoryWatcher::FDirectoryChanged::CreateUObject(NewItem, &UCodeProjectItem::HandleDirectoryChanged), OnDirectoryChangedHandle);
+			FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::Get().LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
+			DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(InPathName, IDirectoryWatcher::FDirectoryChanged::CreateUObject(NewItem, &UCodeProjectItem::HandleDirectoryChanged), OnDirectoryChangedHandle);
 		}
 	}
 }
@@ -74,6 +81,7 @@ void UCodeProjectItem::HandleDirectoryChanged(const TArray<FFileChangeData>& Fil
 	// @TODO: dynamical update directory watchers so we can update the view in real-time
 	for(const auto& Change : FileChanges)
 	{
+		UE_LOG(LogTemp, Log, TEXT("File change: %s"), *Change.Filename);
 		switch(Change.Action)
 		{
 		default:
@@ -81,17 +89,39 @@ void UCodeProjectItem::HandleDirectoryChanged(const TArray<FFileChangeData>& Fil
 			break;
 		case FFileChangeData::FCA_Added:
 			{
+				//is file a chuck file?
+			if (Change.Filename.EndsWith(TEXT(".ck")))
+			{
+				FChunrealEditor::ScanWorkingDirectoryAndUpdateRuntimeAssets();
+			}
 
 			}
 			break;
 		case FFileChangeData::FCA_Modified:
 			{
-
+			if (Change.Filename.EndsWith(TEXT(".ck")))
+			{
+				auto* ChuckProcessor = FChunrealEditor::GetProcessorProxyForChuck(Change.Filename);
+				if (ChuckProcessor)
+				{
+					FGuid OldGuid = ChuckProcessor->ChuckGuid;
+					ChuckProcessor->ChuckGuid = FGuid::NewGuid();
+					UE_LOG(LogTemp, Log, TEXT("Chuck file: %s, has been modified. Old Guid: %s, New Guid: %s"), *Change.Filename, *OldGuid.ToString(), *ChuckProcessor->ChuckGuid.ToString());
+				}
+			}
 			}
 			break;
 		case FFileChangeData::FCA_Removed:
 			{
-
+			if (Change.Filename.EndsWith(TEXT(".ck")))
+			{
+				auto* ChuckProcessor = FChunrealEditor::GetProcessorProxyForChuck(Change.Filename);
+				if (ChuckProcessor)
+				{
+					//ChuckProcessor->ChuckGuid = FGuid::NewGuid();
+					ChuckProcessor->SourcePath = TEXT("");
+				}
+			}
 			}
 			break;
 		}

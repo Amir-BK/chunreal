@@ -3,6 +3,10 @@
 #pragma once
 
 #include "WorkflowOrientedApp/WorkflowCentricApplication.h"
+#include "IDirectoryWatcher.h"
+#include "DirectoryScanner.h"
+#include "Interfaces/IPluginManager.h"
+#include "ChuckInstance.h"
 
 class FCodeProjectEditorToolbar;
 class FDocumentTracker;
@@ -84,4 +88,7 @@ protected:
 	TSharedPtr<class FCodeProjectEditorToolbar> ToolbarBuilder;
 
 	static TWeakPtr<FCodeProjectEditor> CodeEditor;
+
+	/** Delegate handle for directory watcher */
+	FDelegateHandle OnDirectoryChangedHandle;
 };

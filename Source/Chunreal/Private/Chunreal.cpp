@@ -88,7 +88,7 @@ void FChunrealModule::ShutdownModule()
 
 void FChunrealModule::ScanWorkingDirectoryForChucks()
 {
-	return;
+
 	//Scan working directory for ChucK files
 	TArray<FString> ChuckFiles;
 	FFileManagerGeneric::Get().FindFiles(ChuckFiles, *workingDirectory, TEXT("ck"));
@@ -100,14 +100,14 @@ void FChunrealModule::ScanWorkingDirectoryForChucks()
 	for (const FString& ChuckFile : ChuckFiles)
 	{
 		//Create transient UChuckProcessor
-		UChuckProcessor* ChuckProcessor = NewObject<UChuckProcessor>(AssetManager.GetPackage(), FName(*ChuckFile), RF_Standalone);
-		ChuckProcessor->bIsAutoManaged = true;
+		//UChuckProcessor* ChuckProcessor = NewObject<UChuckProcessor>(AssetManager.GetPackage(), FName(*ChuckFile), RF_Standalone);
+		//ChuckProcessor->bIsAutoManaged = true;
 		//AssetRegistryModule.Get().AddPath(ChuckFile);
-		AssetRegistryModule.Get().AssetCreated(ChuckProcessor);
+		//AssetRegistryModule.Get().AssetCreated(ChuckProcessor);
 		
-		bool bIsChuckValid = ChuckProcessor->IsAsset();
-		FString boolToString = bIsChuckValid ? "true" : "false";
-		UE_LOG(LogChunreal, Log, TEXT("Found Chuck file: %s, still exists? %s"), *ChuckFile, *boolToString);
+		//bool bIsChuckValid = ChuckProcessor->IsAsset();
+		//FString boolToString = bIsChuckValid ? "true" : "false";
+		//UE_LOG(LogChunreal, Log, TEXT("Found Chuck file: %s, still exists? %s"), *ChuckFile, *boolToString);
 		//Register UChuckProcessor
 		//FMetasoundFrontendRegistryContainer::Get()->RegisterNode(ChuckProcessor);
 	}

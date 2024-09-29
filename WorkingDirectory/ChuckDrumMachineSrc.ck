@@ -10,10 +10,10 @@ global float noteFreq;
 Gain g => dac; // create a mixer and send it to the output buffer 
 
 SndBuf kick => g => dac;
-SndBuf snare => g => dac;
+SndBuf snare=> g =>   dac;
 SndBuf hihat => g => dac;
 
-
+snare => Delay delay(0.3::second, 0.1::second) => dac;
 
 // read files, we use me.dir() + "path_in_side_working_directory" syntax to get relative file paths that we can package with the plugin or a game
 
@@ -36,11 +36,11 @@ while( true )
 
 
 }
-
+// test 
 // basic play function (add more arguments as needed)
 fun void play( float note, float velocity )
 {
-    <<< "chuck drum note" , note >>>;
+   // <<< "chuck drum note" , note >>>;
     // soon we'll check the velocity but for now just set the pos of the kick to 0
     if(note == 36)
     {
@@ -49,7 +49,7 @@ fun void play( float note, float velocity )
 
     if(note == 38)
     {
-        00=>snare.pos;
+        00=>hihat.pos;
     }
  
 }

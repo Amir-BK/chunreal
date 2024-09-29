@@ -18,7 +18,7 @@ allpass => Delay delay => lowpass;
 // place zero
 while(true)
 {
-  noteEvent => now;
+ 	 noteEvent => now;
 //<<< "Received Note in Chuck!", noteFreq >>>;
 -1 => lowpass.zero;
 // fire excitation
@@ -35,7 +35,7 @@ L::samp => now;
 0 => imp.gain;
 }
 // advance time
-//(Math.log(.0001) / Math.log(R))::samp => now;
+//(Math.log(.0001) / Math.log(R))::samp => now; TEST WHATEVER 12
 
 // set (fundamental) freq
 fun int setFreq( float freq )
@@ -52,7 +52,7 @@ fun int setFreq( float freq )
     D - Di => float Df;
     // set allpass using fractional and fundamental
     polePos( Df, omega ) => allpass.allpass;
-
+	//<<< "Karplus baby!" >>>;
     // return integer portion
     return Di;
 }
