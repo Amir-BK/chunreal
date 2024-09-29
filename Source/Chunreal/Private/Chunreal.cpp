@@ -9,10 +9,14 @@
 //-----------------------------------------------------------------------------
 
 #include "Chunreal.h"
+#include "Misc/CoreDelegates.h"
 #include "MetasoundFrontendRegistries.h"
 #include "MetasoundDataTypeRegistrationMacro.h"
 #include "Interfaces/IPluginManager.h"
 #include "HAL/FileManager.h"
+#include "Misc/FileHelper.h"
+#include "HAL/FileManagerGeneric.h"
+#include "Engine/AssetManager.h"
 #include "ChuckInstance.h"
 
 #define LOCTEXT_NAMESPACE "FChunrealModule"
@@ -65,6 +69,10 @@ void FChunrealModule::StartupModule()
     FMetasoundFrontendRegistryContainer::Get()->RegisterPendingNodes();
 
 	Metasound::RegisterDataTypeWithFrontend<Metasound::FChuckInstance, Metasound::ELiteralType::UObjectProxy, UChuckProcessor>();
+
+
+	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FChunrealModule::ScanWorkingDirectoryForChucks);
+	//ScanWorkingDirectoryForChucks();
 }
 
 void FChunrealModule::ShutdownModule()
@@ -76,6 +84,35 @@ void FChunrealModule::ShutdownModule()
     delete chuckParent;
     chuckParent = nullptr;  
 
+}
+
+void FChunrealModule::ScanWorkingDirectoryForChucks()
+{
+	return;
+	//Scan working directory for ChucK files
+	TArray<FString> ChuckFiles;
+	FFileManagerGeneric::Get().FindFiles(ChuckFiles, *workingDirectory, TEXT("ck"));
+	const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	auto& AssetManager = UAssetManager::Get();
+	AssetManager.GetPackage();
+
+	//for out test, construct a transient UChuckProcessor for each chuck file
+	for (const FString& ChuckFile : ChuckFiles)
+	{
+		//Create transient UChuckProcessor
+		UChuckProcessor* ChuckProcessor = NewObject<UChuckProcessor>(AssetManager.GetPackage(), FName(*ChuckFile), RF_Standalone);
+		ChuckProcessor->bIsAutoManaged = true;
+		//AssetRegistryModule.Get().AddPath(ChuckFile);
+		AssetRegistryModule.Get().AssetCreated(ChuckProcessor);
+		
+		bool bIsChuckValid = ChuckProcessor->IsAsset();
+		FString boolToString = bIsChuckValid ? "true" : "false";
+		UE_LOG(LogChunreal, Log, TEXT("Found Chuck file: %s, still exists? %s"), *ChuckFile, *boolToString);
+		//Register UChuckProcessor
+		//FMetasoundFrontendRegistryContainer::Get()->RegisterNode(ChuckProcessor);
+	}
+
+	
 }
 
 /// <summary>
@@ -129,6 +166,13 @@ void FChunrealModule::CompileChuckCode(ChucK* chuckRef, const std::string& code,
     compilerMutex.Lock();
     chuckRef->compileCode(code, "", 1, false, shredIDs);
     compilerMutex.Unlock();
+}
+
+void FChunrealModule::CompileChuckFile(ChucK* chuckRef, const std::string& filePath, std::vector<t_CKUINT>* shredIDs)
+{
+	compilerMutex.Lock();
+	chuckRef->compileFile(filePath, "", 1, false, shredIDs);
+	compilerMutex.Unlock();
 }
 
 /// <summary>

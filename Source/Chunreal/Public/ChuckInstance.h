@@ -24,6 +24,12 @@ class CHUNREAL_API UChuckProcessor : public UObject, public IAudioProxyDataFacto
 
 public:
 
+	UPROPERTY()
+	bool bIsAutoManaged = false; //for chucks that are automatically created by the system from .ck files in the working directory
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Chuck")
+	FString SourcePath;
+
 
 	bool CompileChuckCode();
 
@@ -49,16 +55,16 @@ class CHUNREAL_API FChuckInstanceProxy : public Audio::TProxyData<FChuckInstance
 public:
 	IMPL_AUDIOPROXY_CLASS(FChuckInstanceProxy);
 
-	explicit FChuckInstanceProxy(FString InChuckCode)
+	explicit FChuckInstanceProxy(UChuckProcessor* InChuckProcessor)
 		: 
-		ChuckCode(InChuckCode)
+		ChuckProcessor(InChuckProcessor)
 	{
 	}
 
 	FChuckInstanceProxy(const FChuckInstanceProxy& Other) = default;
 
-
-	FString ChuckCode;
+	UChuckProcessor* ChuckProcessor = nullptr;
+	//FString ChuckCode;
 
 
 };

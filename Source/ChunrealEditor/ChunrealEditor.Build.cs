@@ -64,9 +64,11 @@ public class ChunrealEditor : ModuleRules
                 "Projects",
                 "Blutility",
                 "InputCore",
+				"MetasoundEngine",
 
-           
-                "AssetTools",
+
+
+				"AssetTools",
                 "EditorFramework",
                 "UnrealEd",
                 "PropertyEditor",
