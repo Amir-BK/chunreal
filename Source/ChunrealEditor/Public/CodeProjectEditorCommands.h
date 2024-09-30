@@ -13,6 +13,8 @@ public:
 	TSharedPtr<FUICommandInfo> SaveAll;
 	TSharedPtr<FUICommandInfo> InsertTab; //needed to 'steal' the tab key from the editor
 
+
+
 	/** Initialize commands */
 	virtual void RegisterCommands() override;
 };

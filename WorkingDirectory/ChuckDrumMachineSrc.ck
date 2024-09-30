@@ -5,16 +5,18 @@
 global Event noteEvent;
 global float noteFreq;
 
+//
 
 // set up patch and samples, outside the main loop, happens once:
 Gain g => dac; // create a mixer and send it to the output buffer 
+Gain g2 => dac;
 
 SndBuf kick => g => dac;
 SndBuf snare=> g =>   dac;
 SndBuf hihat => g => dac;
 
-snare => Delay delay(0.3::second, 0.1::second) => dac;
-
+snare => Delay delay(0.3::second, 0.1::second) => g2 => dac;
+1 => g2.gain;
 // read files, we use me.dir() + "path_in_side_working_directory" syntax to get relative file paths that we can package with the plugin or a game
 
 me.dir() + "drumkit/kick-0.wav" => kick.read;
@@ -49,7 +51,7 @@ fun void play( float note, float velocity )
 
     if(note == 38)
     {
-        00=>hihat.pos;
+        00=>snare.pos;
     }
  
 }

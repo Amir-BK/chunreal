@@ -219,12 +219,13 @@ void FCodeProjectEditor::InitCodeEditor(const EToolkitMode::Type Mode, const TSh
 		ToolbarBuilder = MakeShareable(new FCodeProjectEditorToolbar(SharedThis(this)));
 	}
 
+	
 	FCodeProjectEditorCommands::Register();
+	BindCommands();
 
 	// Initialize the asset editor and spawn nothing (dummy layout)
 	InitAssetEditor(Mode, InitToolkitHost, CodeEditorAppName, FTabManager::FLayout::NullLayout, /*bCreateDefaultStandaloneMenu=*/ true, /*bCreateDefaultToolbar=*/ true, CodeProject);
 
-	BindCommands();
 
 	// Create the modes and activate one (which will populate with a real layout)
 	AddApplicationMode(
@@ -299,6 +300,7 @@ TSharedRef<SWidget> FCodeProjectEditor::CreateCodeEditorWidget(TSharedRef<FTabIn
 
 void FCodeProjectEditor::Save_Internal()
 {
+	UE_LOG(LogTemp, Log, TEXT("Save_Internal"));
 	Save();
 }
 

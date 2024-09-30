@@ -1,12 +1,14 @@
 // should be very simple
 JCRev jcRev;
 
-//adc  => jcRev =>  dac;
-adc  => blackhole;
+adc  => jcRev =>  dac;
+//adc  => blackhole;
 //adc   =>  dac;
-
+<<< "Test String adg" >>>;
 // set wet/dry ratio
-0.1 => float revMix;
+.1 => float revMix;
+revMix => jcRev.mix;
 
+<<< dac >>>;
 
-
+				

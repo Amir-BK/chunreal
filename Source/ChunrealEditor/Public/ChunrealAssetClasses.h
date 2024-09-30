@@ -94,6 +94,7 @@ public:
 							.Marshaller(FChucKSyntaxHighlighterMarshaller::Create())
 							.Style(&InfoWidgetStyle)
 							.AlwaysShowScrollbars(true)
+							.IsReadOnly(ChuckInstance->bIsAutoManaged)
 					]
 
 			];
