@@ -36,10 +36,14 @@ private:
 
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
+	virtual FReply OnMouseMove(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
+
 	void RemoveTabOnAllSelectedLines();
 
 	void RemoveTabFromCurrentLine();
 
 	void CaretMoveLeft();
+
+	FText CurrentlyHoveredWord;
 
 };

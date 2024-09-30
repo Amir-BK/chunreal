@@ -66,7 +66,8 @@ namespace ChucKSyntax
 		TEXT("vec4"),
 		TEXT("complex"),
 		TEXT("polar"),
-		TEXT("string")
+		TEXT("string"),
+		TEXT("Event")
 
 
 	};
@@ -170,7 +171,8 @@ namespace ChucKSyntax
 		TEXT("@"),
 		TEXT("@@"),
 		TEXT("->"),
-		TEXT("<-")
+		TEXT("<-"),
+		TEXT(".")
 
 	};
 
@@ -252,6 +254,13 @@ protected:
 					const TCHAR* CurrentString = &Input[CurrentOffset];
 					const TCHAR CurrentChar = Input[CurrentOffset];
 
+					//if current char is "." print something, we'll figure it out later
+					if (CurrentChar == TEXT('.'))
+					{
+						UE_LOG(LogTemp, Warning, TEXT("Current char is a dot"));
+						//continue;
+					}
+
 					bool bHasMatchedSyntax = false;
 
 					// Greedy matching for operators
@@ -284,6 +293,7 @@ protected:
 						{
 							const TCHAR PeekChar = Input[PeekOffset];
 
+
 							if (!IsAlpha(PeekChar))
 							{
 								break;
@@ -310,6 +320,7 @@ protected:
 						}
 					}
 
+					
 					const int32 CurrentStringLength = PeekOffset - CurrentOffset;
 
 					// Check if it is an reserved keyword

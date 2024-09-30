@@ -1,8 +1,15 @@
 // tuned plucked string filter
 // Ge Wang (gewang@cs.princeton.edu)
 
+
+
 global Event noteEvent;
 global float noteFreq;
+
+
+//me.dir() + "ShephardTone.ck" => string ShepFile;
+
+//Machine.add(ShepFile);
 
 36 => noteFreq;
 <<< "Sample Rate:" , second/samp >>>;

@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SCodeEditableText.h"
+#include "Widgets/Text/SlateEditableTextLayout.h"
 #include "CodeEditorStyle.h"
 
 
@@ -128,6 +129,50 @@ FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEve
 	
 	return FReply::Unhandled();
 	//return FReply::Unhandled();
+}
+
+FReply SBkCodeEditableText::OnMouseMove(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
+{
+	//print token under mouse
+
+	//get mouse location and convert it to text location
+	FVector2D MousePosition = MouseEvent.GetScreenSpacePosition();
+	FVector2D LocalMousePosition = MyGeometry.AbsoluteToLocal(MousePosition);
+	//FTextLocation MouseLocation = GetTex
+	//probably wasteful but let's give it a spin
+	//Get current selection
+	FTextSelection OriginalSelectionRange = EditableTextLayout->GetSelection();
+
+	EditableTextLayout->SelectWordAt(LocalMousePosition);
+	FTextSelection NewSelectionRange = EditableTextLayout->GetSelection();
+
+	FText SelectedWord = EditableTextLayout->GetSelectedText();
+	//if Text contains a "." we need to run a delimiter and pick the right token! let's see how!
+	if (SelectedWord.ToString().Contains(TEXT(".")))
+	{
+		//split the string by "."
+		TArray<FString> Tokens;
+		SelectedWord.ToString().ParseIntoArray(Tokens, TEXT("."), true);
+		//SelectedWord = FText::FromString(Tokens.Last());
+		//dead end??
+
+	}
+
+	//if the word is not empty AND different from the currently hovered word, we need to update the currently hovered word and print it
+	if (!SelectedWord.IsEmpty() && SelectedWord.ToString() != CurrentlyHoveredWord.ToString())
+	{
+		CurrentlyHoveredWord = SelectedWord;
+		//print it, for now
+		UE_LOG(LogTemp, Warning, TEXT("word under mouse is word: %s"), *SelectedWord.ToString());
+	}
+
+	//print it, for now
+	//UE_LOG(LogTemp, Warning, TEXT("word under mouse is word: %s"), *SelectedWord.ToString());
+	//EditableTextLayout->Get
+	//revert selection to original
+	EditableTextLayout->SelectText(OriginalSelectionRange.GetBeginning(), OriginalSelectionRange.GetEnd());
+
+	return SMultiLineEditableText::OnMouseMove(MyGeometry, MouseEvent);
 }
 
 void SBkCodeEditableText::RemoveTabOnAllSelectedLines()
