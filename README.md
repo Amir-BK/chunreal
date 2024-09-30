@@ -1,9 +1,9 @@
 Status:
 1. Fixed file loading on windows (doesn't work on main repo).
 2. Reading/writing global variables via ChuckID is not possible when using the 'new style' processor
-3. work in progress - real time chuck code editor:
+3. work in progress - real time chuck code editor, monitors the chuck files in the WorkingDirectory and automatically recompiles the chuck vm on changes 
 
-https://github.com/user-attachments/assets/47b4a559-2051-481e-b894-cdd233e647bf
+https://github.com/user-attachments/assets/accddb23-fffd-4d21-80f7-6d6ad3640467
 
 
 # Purpose of fork -
@@ -18,6 +18,13 @@ The end result should be reusable chuck assets that can be used inside metasound
 
 
 ## New workflow!
+
+### Automatic monitoring of chuck source files
+The ChunrealEditor module monitors the working directory (inside the plugin folder) for .ck files and will automatically create chuck processor assets for these sources, changes to the source files are tracked and will trigger recompilation of chuck vms using these proxies, this is still a work in progress but there are many advantages to keeping the chucks as source files outside unreal, primarily being able to add them to source control and easily editing them from text editors outside unreal.
+
+At the moment (a matter of days if not hours) it is the 'Chuck Project Editor' that monitors the directory rather than the module itself, the plan is not to have any dependencies on Editor Only functionality so that these chuck sources can also potentially be exposed and modified in packaged games at runtime.
+
+### Manual creation (to be redesigned)
 
 Instead of assigning the code via blueprints there's a new 'Chuck Processor' asset that can be created via the content browser - 
 ![image](https://github.com/user-attachments/assets/27a6adf3-393b-4b7d-89fb-42ea7423ed2d)
