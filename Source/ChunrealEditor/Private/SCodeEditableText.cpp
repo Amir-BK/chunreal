@@ -89,6 +89,17 @@ FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEve
 	{
 		return SMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
 	}
+
+	//ctrl + c, ctrl + v, ctrl + x, ctrl+z, ctrl+y
+	//if ctrl is pressed
+	if (InKeyEvent.IsControlDown())
+	{
+		if (InKeyEvent.GetKey() == EKeys::C || InKeyEvent.GetKey() == EKeys::V || InKeyEvent.GetKey() == EKeys::X || InKeyEvent.GetKey() == EKeys::Z || InKeyEvent.GetKey() == EKeys::Y)
+		{
+			return SMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
+		}
+	}
+
 	
 	return FReply::Unhandled();
 	//return FReply::Unhandled();
