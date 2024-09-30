@@ -22,7 +22,7 @@ while(true)
 //<<< "Received Note in Chuck!", noteFreq >>>;
 -1 => lowpass.zero;
 // fire excitation
-0.3 => imp.gain;
+0.4 => imp.gain;
 // finding our (integer) delay order
 Std.mtof( noteFreq ) => setFreq => float L;
 // set delay
