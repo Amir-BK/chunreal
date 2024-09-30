@@ -12,6 +12,7 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "Chunreal/chuck/chuck.h"
 #include "Chunreal/chuck/chuck_def.h"
 #include "Chunreal/chuck/chuck_globals.h"
@@ -35,6 +36,8 @@ public:
 	//working directory path
 	FString workingDirectory;
 
+	virtual void ScanWorkingDirectoryForChucks();
+
     //Get ChucK sample rate
     static t_CKINT GetChuckSampleRate();
     //Set ChucK sample rate
@@ -48,6 +51,9 @@ public:
 
     //Compile ChucK code with a mutex
     static void CompileChuckCode(ChucK* chuckRef, const std::string& code, std::vector<t_CKUINT>* shredIDs = nullptr);
+
+	//Compile ChucK file with a mutex
+	static void CompileChuckFile(ChucK* chuckRef, const std::string& filePath, std::vector<t_CKUINT>* shredIDs = nullptr);
 
     //Run ChucK with a mutex
     static void RunChuck(ChucK* chuckRef, const float* input, float* output, t_CKINT numFrames);

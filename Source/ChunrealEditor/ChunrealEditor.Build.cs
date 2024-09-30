@@ -64,6 +64,20 @@ public class ChunrealEditor : ModuleRules
                 "Projects",
                 "Blutility",
                 "InputCore",
+				"MetasoundEngine",
+
+
+
+				"AssetTools",
+                "EditorFramework",
+                "UnrealEd",
+                "PropertyEditor",
+                "Kismet",  // for FWorkflowCentricApplication
+                "InputCore",
+                "DirectoryWatcher",
+                "LevelEditor",
+                "Engine",
+                "ToolMenus",
     
 
 				// ... add private dependencies that you statically link with here ...

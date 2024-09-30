@@ -174,7 +174,32 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			, AudioOutLeft(FAudioBufferWriteRef::CreateNew(InParams.OperatorSettings))
 			, AudioOutRight(FAudioBufferWriteRef::CreateNew(InParams.OperatorSettings))
 		{
-			Reset(InParams);
+			//Reset(InParams);
+			UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Constructor"));
+
+			theChuck = new ChucK();
+			theChuck->setLogLevel(5);
+			//Initialize Chuck params
+			theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, SampleRate);
+			theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
+			theChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, 2);
+			theChuck->setParam(CHUCK_PARAM_VM_ADAPTIVE, 0);
+			theChuck->setParam(CHUCK_PARAM_VM_HALT, (t_CKINT)(false));
+			//Chuck->setParam(CHUCK_PARAM_OTF_PORT, g_otf_port);
+			//Chuck->setParam(CHUCK_PARAM_OTF_ENABLE, (t_CKINT)TRUE);
+			//Chuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)dump);
+			theChuck->setParam(CHUCK_PARAM_AUTO_DEPEND, (t_CKINT)0);
+			//Chuck->setParam(CHUCK_PARAM_DEPRECATE_LEVEL, deprecate_level);
+			theChuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, true);
+			//Chuck->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
+			//Chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
+			theChuck->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, true);
+
+			//Set working directory
+			FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
+			theChuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, TCHAR_TO_UTF8(*ChunrealModule.workingDirectory));
+
+	
 		}
 
 		virtual void BindInputs(FInputVertexInterfaceData& InVertexData) override
@@ -264,7 +289,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			case GControl:
 				break;
 			case GPitch:
-				UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Pitch Bend: %d"), InData1);
+				//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Pitch Bend: %d"), InData1);
 				
 				//PitchBendRamper.SetTarget(FMidiMsg::GetPitchBendFromData(InData1, InData2));
 				break;
@@ -288,44 +313,30 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			const FChuckInstance& ChuckInstance = *Inputs.ChuckInstance;
 			if (!ChuckInstance.IsInitialized())
 			{
-				UE_LOG(LogChucKMidiNode, Error, TEXT("Invalid Chuck Instance"));
+				ChuckProcessor = nullptr;
 				return;
 			}
 
 			//get proxy 
-			
-
-			//Run ChucK code
-			if (theChuck == nullptr)
+			if (CurrentChuckGuid != ChuckInstance.GetProxy()->ChuckProcessor->ChuckGuid)
 			{
-				UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Constructor"));
-
-				auto NewChuck = new ChucK();
-				NewChuck->setLogLevel(5);
-				//Initialize Chuck params
-				NewChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, SampleRate);
-				NewChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
-				NewChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, 2);
-				NewChuck->setParam(CHUCK_PARAM_VM_ADAPTIVE, 0);
-				NewChuck->setParam(CHUCK_PARAM_VM_HALT, (t_CKINT)(false));
-				//Chuck->setParam(CHUCK_PARAM_OTF_PORT, g_otf_port);
-				//Chuck->setParam(CHUCK_PARAM_OTF_ENABLE, (t_CKINT)TRUE);
-				//Chuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)dump);
-				NewChuck->setParam(CHUCK_PARAM_AUTO_DEPEND, (t_CKINT)0);
-				//Chuck->setParam(CHUCK_PARAM_DEPRECATE_LEVEL, deprecate_level);
-				NewChuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, true);
-				//Chuck->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
-				//Chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
-				NewChuck->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, true);
-
-				//Set working directory
-				FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
-				NewChuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, TCHAR_TO_UTF8(*ChunrealModule.workingDirectory));
-
-				NewChuck->init();
-				NewChuck->start();
-
+				//we have a new chuck instance (or the source file has been changed), we can now reinitialize the chuck
+				theChuck->init();
+				theChuck->start();
 				
+				ChuckProcessor = ChuckInstance.GetProxy()->ChuckProcessor;
+				CurrentChuckGuid = ChuckProcessor->ChuckGuid;
+		
+				DeinterleavedBuffer.resize(2 * BlockSizeFrames);
+				DecodedAudioDataBuffer.resize(2 * BlockSizeFrames);
+
+				// if buffer is initialized, delete it and set to false
+				if (bufferInitialized)
+				{
+					delete inBufferInterleaved;
+					delete outBufferInterleaved;
+					bufferInitialized = false;
+				}
 
 				if (hasSporkedOnce)
 				{
@@ -337,8 +348,21 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				{
 					hasSporkedOnce = true;
 				}
-				FChunrealModule::CompileChuckCode(NewChuck, TCHAR_TO_UTF8(*ChuckInstance.GetProxy()->ChuckCode));
-				NewChuck->probeChugins();
+
+
+				if (ChuckInstance.GetProxy()->ChuckProcessor->bIsAutoManaged)
+				{
+					//FChunrealModule::CompileChuckCode
+					FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
+					FString WorkingDir = ChunrealModule.workingDirectory;
+					FChunrealModule::CompileChuckFile(theChuck, TCHAR_TO_UTF8(*(ChuckInstance.GetProxy()->ChuckProcessor->SourcePath)));
+				}
+				else
+				{
+					FChunrealModule::CompileChuckCode(theChuck, TCHAR_TO_UTF8(*ChuckInstance.GetProxy()->ChuckProcessor->Code));
+				}
+
+				theChuck->probeChugins();
 
 
 				const float RampCallRateHz = (float)(1 / SampleRate) / (float)BlockSizeFrames;
@@ -349,8 +373,8 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 
 
-				DeinterleavedBuffer.resize(2 * BlockSizeFrames);
-				DecodedAudioDataBuffer.resize(2 * BlockSizeFrames);
+
+
 				//DeinterleavedBuffer[0] = AudioOutLeft->GetData();
 				//DeinterleavedBuffer[1] = AudioOutRight->GetData();
 
@@ -358,21 +382,16 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				CurrentTrackNumber = *Inputs.TrackIndex;
 				CurrentChannelNumber = *Inputs.ChannelIndex;
 
-				theChuck = NewChuck;
 			}
+
 
 			//Make interleaved buffers
 			if (!bufferInitialized)
 			{
-				inBufferInterleaved = new float[numSamples * 2];
-				outBufferInterleaved = new float[numSamples * 2];
+				inBufferInterleaved = new float[BlockSizeFrames * 2];
+				outBufferInterleaved = new float[BlockSizeFrames * 2];
 
 				bufferInitialized = true;
-			}
-			for (int i = 0; i < numSamples; i++)
-			{
-				 *(inBufferInterleaved + i * 2) = *(inBufferLeft + i);
-				 *(inBufferInterleaved + i * 2 + 1) = *(inBufferRight + i);
 			}
 
 			
@@ -381,9 +400,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 					//NoteOff(Event.GetVoiceId(), Event.MidiMessage.GetStdData1(), Event.MidiMessage.GetStdChannel());
 				});
 			
-			//Filter.SetFilterValues(*Inputs.TrackIndex, *Inputs.ChannelIndex, false);
 
-			//Outputs.MidiStream->PrepareBlock();
 
 			// create an iterator for midi events in the block
 			const TArray<FMidiStreamEvent>& MidiEvents = Inputs.MidiStream->GetEventsInBlock();
@@ -444,6 +461,14 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 			PitchBendRamper.Ramp();
 
+			//we need to copy the node's input data to chuck's input data
+			for (int i = 0; i < BlockSizeFrames; i++)
+			{
+				*(inBufferInterleaved + i * 2) = *(inBufferLeft + i);
+				*(inBufferInterleaved + i * 2 + 1) = *(inBufferRight + i);
+
+			}
+
 			//Process samples by ChucK
 			FChunrealModule::RunChuck(theChuck, (float*)inBufferInterleaved, outBufferInterleaved, BlockSizeFrames);
 
@@ -453,22 +478,6 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				*(outBufferLeft + i) = *(outBufferInterleaved + i * 2);// *(*Amplitude);
 				*(outBufferRight + i) = *(outBufferInterleaved + i * 2 + 1);// *(*Amplitude);
 			}
-			/*
-			EpicSynth1.SetOscPitchBend(0, PitchBendRamper.GetCurrent());
-			EpicSynth1.SetOscPitchBend(1, PitchBendRamper.GetCurrent());
-			UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Pitch Bend: %f"), PitchBendRamper.GetCurrent());
-
-			//acquire samples from synth
-			for (int32 SampleIndex = 0; SampleIndex < BlockSizeFrames; ++SampleIndex)
-			{
-			
-				//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Pitch Bend: %f"), PitchBendRamper.GetCurrent());
-
-				EpicSynth1.GenerateFrame(&DecodedAudioDataBuffer.data()[SampleIndex]);
-				AudioOutLeft->GetData()[SampleIndex] = DecodedAudioDataBuffer.data()[SampleIndex];
-				AudioOutRight->GetData()[SampleIndex] = DecodedAudioDataBuffer.data()[SampleIndex + 1];
-			}
-			*/
 
 
 
@@ -561,6 +570,9 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 			bool bufferInitialized = false;
 			bool hasSporkedOnce = false;
+
+			UChuckProcessor* ChuckProcessor = nullptr;
+			FGuid CurrentChuckGuid;
 
 	
 

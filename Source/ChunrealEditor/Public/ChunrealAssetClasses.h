@@ -94,6 +94,7 @@ public:
 							.Marshaller(FChucKSyntaxHighlighterMarshaller::Create())
 							.Style(&InfoWidgetStyle)
 							.AlwaysShowScrollbars(true)
+							.IsReadOnly(ChuckInstance->bIsAutoManaged)
 					]
 
 			];
@@ -121,6 +122,9 @@ public:
 	//~ UFactory Interface
 	virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn, FName CallingContext) override
 	{
+		//print object flags
+
+		
 		UChuckProcessor* NewInstance = NewObject<UChuckProcessor>(InParent, InClass, InName, Flags);
 		return NewInstance;
 	}

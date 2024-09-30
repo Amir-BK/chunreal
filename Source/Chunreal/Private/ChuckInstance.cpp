@@ -13,7 +13,7 @@ DEFINE_METASOUND_DATA_TYPE(Metasound::FChuckInstance, "ChucK Instance")
 inline TSharedPtr<Audio::IProxyData> UChuckProcessor::CreateProxyData(const Audio::FProxyDataInitParams& InitParams)
 {
 
-	return MakeShared<FChuckInstanceProxy>(Code);
+	return MakeShared<FChuckInstanceProxy>(this);
 }
 
 bool UChuckProcessor::CompileChuckCode()
