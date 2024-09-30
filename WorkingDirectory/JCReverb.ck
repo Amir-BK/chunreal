@@ -1,14 +1,14 @@
-// should be very simple
-JCRev jcRev;
+// stereo reverb
+adc => JCRev revL =>  Gain gL => dac.left;
+adc => JCRev revR => Gain gR => dac.right;
 
-adc  => jcRev =>  dac;
-//adc  => blackhole;
-//adc   =>  dac;
-<<< "Test String adg" >>>;
-// set wet/dry ratio
-.1 => float revMix;
-revMix => jcRev.mix;
 
-<<< dac >>>;
+// set effects mix
 
-				
+1  => float mixGain;
+
+mixGain => revL.gain;
+mixGain => revR.gain;
+
+// infinite time loop
+while( true ) 1::second => now;

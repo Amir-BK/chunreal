@@ -84,17 +84,42 @@ FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEve
 		}
 	}
 
-	//key up down left right
-	if (InKeyEvent.GetKey() == EKeys::Up || InKeyEvent.GetKey() == EKeys::Down || InKeyEvent.GetKey() == EKeys::Left || InKeyEvent.GetKey() == EKeys::Right)
+	//key up down 
+	if (InKeyEvent.GetKey() == EKeys::Up || InKeyEvent.GetKey() == EKeys::Down)
 	{
 		return SMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
 	}
+
+	// if left right we also want to check if ctrl is checked, if it is we want to do simple caret movement
+	if (InKeyEvent.GetKey() == EKeys::Left || InKeyEvent.GetKey() == EKeys::Right)
+	{
+		if (!InKeyEvent.IsControlDown())
+		{
+			return SMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
+		}
+		else {
+
+			//caret movement
+			if (InKeyEvent.GetKey() == EKeys::Left)
+			{
+				CaretMoveLeft();
+			}
+			else
+			{
+				//caret move right
+			}
+
+			return FReply::Handled();
+		}
+	}
+
 
 	//ctrl + c, ctrl + v, ctrl + x, ctrl+z, ctrl+y
 	//if ctrl is pressed
 	if (InKeyEvent.IsControlDown())
 	{
-		if (InKeyEvent.GetKey() == EKeys::C || InKeyEvent.GetKey() == EKeys::V || InKeyEvent.GetKey() == EKeys::X || InKeyEvent.GetKey() == EKeys::Z || InKeyEvent.GetKey() == EKeys::Y)
+		if (InKeyEvent.GetKey() == EKeys::C || InKeyEvent.GetKey() == EKeys::V || InKeyEvent.GetKey() == EKeys::X ||
+			InKeyEvent.GetKey() == EKeys::Z || InKeyEvent.GetKey() == EKeys::Y || /* select all*/ InKeyEvent.GetKey() == EKeys::A)
 		{
 			return SMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
 		}
@@ -169,6 +194,75 @@ void SBkCodeEditableText::RemoveTabFromCurrentLine()
 
 		DeleteSelectedText();
 
+	}
+
+}
+
+void SBkCodeEditableText::CaretMoveLeft()
+{
+	//from current cursor location, if on a token, move to the beginning of the token, if not on a token, move to the end of the previous token
+	//if no token in line, move to the end of the previous line, if at the beginning of the first line, do nothing.
+
+	FTextLocation CursorLocation = GetCursorLocation();
+	FString TextLine;
+	GetTextLine(CursorLocation.GetLineIndex(), TextLine);
+
+	//if cursor is at the beginning of the line, move to the end of the previous line
+	if (CursorLocation.GetOffset() == 0)
+	{
+		if (CursorLocation.GetLineIndex() > 0)
+		{
+			FTextLocation NewLocation(CursorLocation.GetLineIndex() - 1, 0);
+			GoTo(NewLocation);
+		}
+	}
+	else
+	{
+		//if cursor is not at the beginning of the line, move to the beginning of the token
+		//if cursor is on a token, move to the beginning of the token
+		//if cursor is not on a token, move to the end of the previous token
+		//if no token in line, move to the end of the previous line
+
+		//if cursor is on a token, move to the beginning of the token
+		if (FChar::IsIdentifier(TextLine[CursorLocation.GetOffset() - 1]))
+		{
+			//move to the beginning of the token
+			int32 TokenStart = CursorLocation.GetOffset() - 1;
+			while (TokenStart > 0 && FChar::IsIdentifier(TextLine[TokenStart - 1]))
+			{
+				--TokenStart;
+			}
+
+			FTextLocation NewLocation(CursorLocation.GetLineIndex(), TokenStart);
+			GoTo(NewLocation);
+		}
+		else
+		{
+			//if cursor is not on a token, move to the end of the previous token
+			//if no token in line, move to the end of the previous line
+			//if cursor is at the beginning of the line, move to the end of the previous line, do nothing
+			//if cursor is at the beginning of the first line, do nothing
+
+			//if cursor is at the beginning of the line, move to the end of the previous line
+			if (CursorLocation.GetOffset() == 0)
+			{
+				if (CursorLocation.GetLineIndex() > 0)
+				{
+					FTextLocation NewLocation(CursorLocation.GetLineIndex() - 1, 0);
+					GoTo(NewLocation);
+				}
+			}
+			else
+			{
+				//if cursor is not at the beginning of the line, move to the end of the previous token
+				//if no token in line, move to the end of the previous line
+
+				//if cursor is not at the
+				//if cursor is not at the beginning of the line, move to the end of the previous token
+				//if no token in line, move to the end of the previous line
+				//if at the beginning of the first line, do nothing.
+			}
+		}
 	}
 
 }

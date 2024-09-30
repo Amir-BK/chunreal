@@ -39,4 +39,7 @@ private:
 	void RemoveTabOnAllSelectedLines();
 
 	void RemoveTabFromCurrentLine();
+
+	void CaretMoveLeft();
+
 };

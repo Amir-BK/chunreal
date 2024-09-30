@@ -199,10 +199,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
 			theChuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, TCHAR_TO_UTF8(*ChunrealModule.workingDirectory));
 
-			theChuck->init();
-			theChuck->start();
-
-
+	
 		}
 
 		virtual void BindInputs(FInputVertexInterfaceData& InVertexData) override
@@ -323,12 +320,23 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			//get proxy 
 			if (CurrentChuckGuid != ChuckInstance.GetProxy()->ChuckProcessor->ChuckGuid)
 			{
+				//we have a new chuck instance (or the source file has been changed), we can now reinitialize the chuck
+				theChuck->init();
+				theChuck->start();
+				
 				ChuckProcessor = ChuckInstance.GetProxy()->ChuckProcessor;
 				CurrentChuckGuid = ChuckProcessor->ChuckGuid;
 		
 				DeinterleavedBuffer.resize(2 * BlockSizeFrames);
 				DecodedAudioDataBuffer.resize(2 * BlockSizeFrames);
 
+				// if buffer is initialized, delete it and set to false
+				if (bufferInitialized)
+				{
+					delete inBufferInterleaved;
+					delete outBufferInterleaved;
+					bufferInitialized = false;
+				}
 
 				if (hasSporkedOnce)
 				{
@@ -365,6 +373,8 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 
 
+
+
 				//DeinterleavedBuffer[0] = AudioOutLeft->GetData();
 				//DeinterleavedBuffer[1] = AudioOutRight->GetData();
 
@@ -374,20 +384,12 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 			}
 
-			//Run ChucK code
-			if (theChuck == nullptr)
-			{
-				
-
-
-				//theChuck = NewChuck;
-			}
 
 			//Make interleaved buffers
 			if (!bufferInitialized)
 			{
-				inBufferInterleaved = new float[numSamples * 2];
-				outBufferInterleaved = new float[numSamples * 2];
+				inBufferInterleaved = new float[BlockSizeFrames * 2];
+				outBufferInterleaved = new float[BlockSizeFrames * 2];
 
 				bufferInitialized = true;
 			}

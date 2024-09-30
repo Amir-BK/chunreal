@@ -20,6 +20,7 @@ hihat => Delay delay1(0.3::second, 0.1::second) => g2 => dac;
 1 => g2.gain;
 0.5 => delay.gain;
 // read files, we use me.dir() + "path_in_side_working_directory" syntax to get relative file paths that we can package with the plugin or a game
+// DON'T double click the wav files in the project browser, it will crash unreal until I fix it 
 
 me.dir() + "drumkit/kick-0.wav" => kick.read;
 me.dir() + "drumkit/snare-0.wav" => snare.read;
