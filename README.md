@@ -1,3 +1,6 @@
+Support and Feedback:
+https://discord.gg/EWFKWTz3
+
 Status:
 1. Fixed file loading on windows (doesn't work on main repo).
 2. Reading/writing global variables via ChuckID is not possible when using the 'new style' processor
