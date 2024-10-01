@@ -1,10 +1,11 @@
-Support and Feedback:
+Support and Feedback (for this fork)
 https://discord.gg/EWFKWTz3
 
 Status:
 1. Fixed file loading on windows (doesn't work on main repo).
 2. Reading/writing global variables via ChuckID is not possible when using the 'new style' processor
-3. work in progress - real time chuck code editor, monitors the chuck files in the WorkingDirectory and automatically recompiles the chuck vm on changes 
+3. work in progress - real time chuck code editor, monitors the chuck files in the WorkingDirectory and automatically recompiles the chuck vm on changes
+4. ChucK Processors can now be applied as Source and Submix effect in preset chains.  
 
 https://github.com/user-attachments/assets/accddb23-fffd-4d21-80f7-6d6ad3640467
 
