@@ -74,7 +74,7 @@ class CHUNREAL_API FChucKSyntaxHighlighterMarshaller : public FSyntaxHighlighter
 
 	static FSyntaxTextStyle GetSyntaxTextStyle()
 	{
-		FAppStyle::GetWidgetStyle<FTextBlockStyle>("SyntaxHighlight.HLSL.Normal");
+		//FAppStyle::GetWidgetStyle<FTextBlockStyle>("SyntaxHighlight.HLSL.Normal");
 		FTextBlockStyle NormalTextStyle = FTextBlockStyle();
 		NormalTextStyle.SetColorAndOpacity(FLinearColor::White);
 		NormalTextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 10));
