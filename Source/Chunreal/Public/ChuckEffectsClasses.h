@@ -45,7 +45,7 @@ class CHUNREAL_API FSubmixChuckEffect : public FSoundEffectSubmix
 	virtual void OnProcessAudio(const FSoundEffectSubmixInputData& InData, FSoundEffectSubmixOutputData& OutData) override
 	{
 		//check for updates 
-		OnPresetChanged();
+		//OnPresetChanged();
 		
 		FChunrealModule::RunChuck(ChuckRef, InData.AudioBuffer->GetData(), OutData.AudioBuffer->GetData(), InData.NumFrames);
 	};
@@ -137,7 +137,7 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 	{
 
 		//check for updates 
-		OnPresetChanged();
+		//OnPresetChanged();
 
 		//Process samples by ChucK
 		FChunrealModule::RunChuck(ChuckRef, InData.InputSourceEffectBufferPtr, OutAudioBufferData, InData.NumSamples / NumChannels);

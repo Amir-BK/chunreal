@@ -21,6 +21,9 @@ inline void FSourceEffectChuck::OnPresetChanged()
 	if (ChuckRef)
 	{
 		//if our GUID has changed, we need to recompile the chuck
+		
+		bool bRecompiledChuck = false;
+
 		if (CurrentChuckGuid != Settings.ChuckInstance->ChuckGuid)
 		{
 			if (bHasSporkedOnce)
@@ -36,7 +39,7 @@ inline void FSourceEffectChuck::OnPresetChanged()
 			
 			CurrentChuckGuid = Settings.ChuckInstance->ChuckGuid;
 			ChuckProcessor->CompileChuckAsset(ChuckRef);
-
+			bRecompiledChuck = true;
 			//we should be good to go now, we'll deal with the parameters later, in theory we shouldn't recompile the chuck if the parameters change, only if the Guid does.
 		}
 
@@ -62,7 +65,11 @@ inline void FSourceEffectChuck::OnPresetChanged()
 				break;
 			}
 
+		}
 
+		if (!bRecompiledChuck)
+		{
+			ChuckRef->globals()->broadcastGlobalEvent("paramUpdate"); //a chance to update the parameters that need to be explicitly updated
 		}
 	}
 
@@ -90,6 +97,7 @@ void FSubmixChuckEffect::OnPresetChanged()
 	//so we should only enter this block if we have a valid chuck processor
 	if (ChuckRef)
 	{
+		bool bRecompiledChuck = false;
 		//if our GUID has changed, we need to recompile the chuck
 		if (CurrentChuckGuid != Settings.ChuckInstance->ChuckGuid)
 		{
@@ -106,6 +114,7 @@ void FSubmixChuckEffect::OnPresetChanged()
 
 			CurrentChuckGuid = Settings.ChuckInstance->ChuckGuid;
 			ChuckProcessor->CompileChuckAsset(ChuckRef);
+			bRecompiledChuck = true;
 
 
 			//we should be good to go now, we'll deal with the parameters later, in theory we shouldn't recompile the chuck if the parameters change, only if the Guid does.
@@ -135,6 +144,12 @@ void FSubmixChuckEffect::OnPresetChanged()
 			}
 
 
+		}
+
+
+		if (!bRecompiledChuck)
+		{
+			ChuckRef->globals()->broadcastGlobalEvent("paramUpdate"); //a chance to update the parameters that need to be explicitly updated
 		}
 	}
 
