@@ -7,6 +7,7 @@
 #include "Sound/SoundEffectSource.h"
 #include "ChuckInstance.h"
 #include "Chunreal.h"
+//#include "Chunreal/chuck/chuck.h"
 
 #include "ChuckEffectsClasses.generated.h"
 
@@ -89,6 +90,8 @@ struct CHUNREAL_API FSourceEffectChuckSettings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
 	TObjectPtr<UChuckProcessor> ChuckInstance;
 
+	ChucK* ChuckRef;
+
 	FSourceEffectChuckSettings()
 	{
 	}
@@ -96,21 +99,91 @@ struct CHUNREAL_API FSourceEffectChuckSettings
 
 class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 {
+
+	~FSourceEffectChuck()
+	{
+		DeleteOurChuck();
+
+	}
+
 	virtual void Init(const FSoundEffectSourceInitData& InitData) override
 	{
-
+		SampleRate = InitData.SampleRate;
 	};
 
-	virtual void OnPresetChanged() override
-	{
-
-	};
+	virtual void OnPresetChanged() override;
 
 	virtual void ProcessAudio(const FSoundEffectSourceInputData& InData, float* OutAudioBufferData) override
 	{
+		
+		//data is interleaved
+		if (!bHasBufferInitialized)
+		{
+			InitBuffers(InData.NumSamples);
+		}
+
+		//check for updates 
+		OnPresetChanged();
+
+
+		//copy interleaved data to our buffer
+		for (int32 i = 0; i < InData.NumSamples; i++)
+		{
+			inBufferInterleaved[i * 2] = InData.InputSourceEffectBufferPtr[i];
+			inBufferInterleaved[i * 2 + 1] = InData.InputSourceEffectBufferPtr[i];
+		}
+
+
+		//Process samples by ChucK
+		FChunrealModule::RunChuck(ChuckRef, inBufferInterleaved, outBufferInterleaved, InData.NumSamples);
+
+		//copy interleaved data to our buffer
+		for (int32 i = 0; i < InData.NumSamples; i++)
+		{
+			OutAudioBufferData[i] = outBufferInterleaved[i * 2];
+
+
+		}
 
 	};
+
+	void DeleteOurChuck()
+	{
+		if (ChuckRef)
+		{
+			delete ChuckRef;
+			ChuckRef = nullptr;
+			bHasSporkedOnce = false;
+		}
+
+		if (bHasBufferInitialized)
+		{
+			delete inBufferInterleaved;
+			delete outBufferInterleaved;
+			bHasBufferInitialized = false;
+		}
+
+	}
+
+	void InitBuffers(int32 NumSamples)
+	{
+		inBufferInterleaved = new float[NumSamples * 2];
+		outBufferInterleaved = new float[NumSamples * 2];
+
+		bHasBufferInitialized = true;
+	}
+
+	bool bHasSporkedOnce = false;
+	bool bHasBufferInitialized = false;
+
+	float* inBufferInterleaved;
+	float* outBufferInterleaved;
+	FGuid CurrentChuckGuid;
+	int32 SampleRate;
+	ChucK* ChuckRef = nullptr;
+	TObjectPtr<UChuckProcessor> ChuckProcessor; // should really make this name consistent with the rest of the codebase
 };
+
 
 UCLASS(ClassGroup = AudioSourceEffect, meta = (BlueprintSpawnableComponent))
 class CHUNREAL_API USourceEffectChuckPreset : public USoundEffectSourcePreset
@@ -119,7 +192,7 @@ class CHUNREAL_API USourceEffectChuckPreset : public USoundEffectSourcePreset
 public:
 	EFFECT_PRESET_METHODS(SourceEffectChuck)
 
-		virtual void OnInit() override {};
+	virtual void OnInit() override {};
 
 	UFUNCTION(BlueprintCallable, Category = "Audio|Effects|Delay")
 	void SetDefaultSettings(const FSourceEffectChuckSettings& InSettings)
@@ -128,6 +201,8 @@ public:
 		SettingsCopy = InSettings;
 		Update();
 	}
+
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, BlueprintSetter = SetDefaultSettings, Category = SourceEffectPreset, Meta = (ShowOnlyInnerProperties))
 	FSourceEffectChuckSettings Settings;

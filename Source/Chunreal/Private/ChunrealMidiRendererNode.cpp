@@ -24,6 +24,7 @@
 #include "Engine/DataTable.h"
 #include "Components/SynthComponent.h"
 #include "HarmonixDsp/Ramper.h"
+#include "Chunreal/chuck/chuck.h"
 //#include "Sfizz.h"
 #include <vector>
 #include "Chunreal.h"
@@ -175,29 +176,29 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			, AudioOutRight(FAudioBufferWriteRef::CreateNew(InParams.OperatorSettings))
 		{
 			//Reset(InParams);
-			UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Constructor"));
+			//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Constructor"));
 
-			theChuck = new ChucK();
-			theChuck->setLogLevel(5);
-			//Initialize Chuck params
-			theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, SampleRate);
-			theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
-			theChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, 2);
-			theChuck->setParam(CHUCK_PARAM_VM_ADAPTIVE, 0);
-			theChuck->setParam(CHUCK_PARAM_VM_HALT, (t_CKINT)(false));
-			//Chuck->setParam(CHUCK_PARAM_OTF_PORT, g_otf_port);
-			//Chuck->setParam(CHUCK_PARAM_OTF_ENABLE, (t_CKINT)TRUE);
-			//Chuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)dump);
-			theChuck->setParam(CHUCK_PARAM_AUTO_DEPEND, (t_CKINT)0);
-			//Chuck->setParam(CHUCK_PARAM_DEPRECATE_LEVEL, deprecate_level);
-			theChuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, true);
-			//Chuck->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
-			//Chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
-			theChuck->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, true);
+			//theChuck = new ChucK();
+			//theChuck->setLogLevel(5);
+			////Initialize Chuck params
+			//theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, SampleRate);
+			//theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
+			//theChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, 2);
+			//theChuck->setParam(CHUCK_PARAM_VM_ADAPTIVE, 0);
+			//theChuck->setParam(CHUCK_PARAM_VM_HALT, (t_CKINT)(false));
+			////Chuck->setParam(CHUCK_PARAM_OTF_PORT, g_otf_port);
+			////Chuck->setParam(CHUCK_PARAM_OTF_ENABLE, (t_CKINT)TRUE);
+			////Chuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)dump);
+			//theChuck->setParam(CHUCK_PARAM_AUTO_DEPEND, (t_CKINT)0);
+			////Chuck->setParam(CHUCK_PARAM_DEPRECATE_LEVEL, deprecate_level);
+			//theChuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, true);
+			////Chuck->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
+			////Chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
+			//theChuck->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, true);
 
-			//Set working directory
-			FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
-			theChuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, TCHAR_TO_UTF8(*ChunrealModule.workingDirectory));
+			////Set working directory
+			//FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
+			//theChuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, TCHAR_TO_UTF8(*ChunrealModule.workingDirectory));
 
 	
 		}
@@ -321,10 +322,16 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			if (CurrentChuckGuid != ChuckInstance.GetProxy()->ChuckProcessor->ChuckGuid)
 			{
 				//we have a new chuck instance (or the source file has been changed), we can now reinitialize the chuck
+				ChuckProcessor = ChuckInstance.GetProxy()->ChuckProcessor;
+
+				if (theChuck == nullptr)
+				{
+					theChuck = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate);
+				}
+
 				theChuck->init();
 				theChuck->start();
 				
-				ChuckProcessor = ChuckInstance.GetProxy()->ChuckProcessor;
 				CurrentChuckGuid = ChuckProcessor->ChuckGuid;
 		
 				DeinterleavedBuffer.resize(2 * BlockSizeFrames);
@@ -349,20 +356,10 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 					hasSporkedOnce = true;
 				}
 
+				ChuckProcessor->CompileChuckAsset(theChuck);
 
-				if (ChuckInstance.GetProxy()->ChuckProcessor->bIsAutoManaged)
-				{
-					//FChunrealModule::CompileChuckCode
-					FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
-					FString WorkingDir = ChunrealModule.workingDirectory;
-					FChunrealModule::CompileChuckFile(theChuck, TCHAR_TO_UTF8(*(ChuckInstance.GetProxy()->ChuckProcessor->SourcePath)));
-				}
-				else
-				{
-					FChunrealModule::CompileChuckCode(theChuck, TCHAR_TO_UTF8(*ChuckInstance.GetProxy()->ChuckProcessor->Code));
-				}
 
-				theChuck->probeChugins();
+				//theChuck->probeChugins();
 
 
 				const float RampCallRateHz = (float)(1 / SampleRate) / (float)BlockSizeFrames;

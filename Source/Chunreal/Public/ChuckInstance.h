@@ -7,6 +7,7 @@
 #include "IAudioProxyInitializer.h"
 #include "MetasoundDataTypeRegistrationMacro.h"
 #include "Chunreal.h"
+//#include "Chunreal/chuck/chuck.h"
 #include "ChuckInstance.generated.h"
 
 
@@ -44,6 +45,13 @@ public:
 	//if true, the ChucK will only be compiled once and shared with all instantiations via metasounds 
 	UPROPERTY(BlueprintReadWrite, Category = "Chuck", meta = (ExposeOnSpawn = true), EditAnywhere)
 	bool bShareChuck = false;
+
+	//spawn chuck with optional instance ID for registration with the module, we'll see about destroying it later
+	ChucK* SpawnChuckFromAsset(FString InstanceID = FString(), int32 InSampleRate = 48000);
+
+	void CompileChuckAsset(ChucK* chuckRef);
+
+	//TMap<FString, Chuck*> ChuckInstances;
 
 private:
 	ChucK* Chuck = nullptr;

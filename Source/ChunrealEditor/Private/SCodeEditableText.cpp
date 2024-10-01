@@ -163,7 +163,7 @@ FReply SBkCodeEditableText::OnMouseMove(const FGeometry& MyGeometry, const FPoin
 	{
 		CurrentlyHoveredWord = SelectedWord;
 		//print it, for now
-		UE_LOG(LogTemp, Warning, TEXT("word under mouse is word: %s"), *SelectedWord.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("word under mouse is word: %s"), *SelectedWord.ToString());
 	}
 
 	//print it, for now
