@@ -21,8 +21,7 @@ inline void FSourceEffectChuck::OnPresetChanged()
 	if (ChuckRef)
 	{
 		//if our GUID has changed, we need to recompile the chuck
-		
-		bool bRecompiledChuck = false;
+	
 
 		if (CurrentChuckGuid != Settings.ChuckInstance->ChuckGuid)
 		{
@@ -39,27 +38,28 @@ inline void FSourceEffectChuck::OnPresetChanged()
 			
 			CurrentChuckGuid = Settings.ChuckInstance->ChuckGuid;
 			ChuckProcessor->CompileChuckAsset(ChuckRef);
-			bRecompiledChuck = true;
+			bFirstFrameForChuck = true;
 			//we should be good to go now, we'll deal with the parameters later, in theory we shouldn't recompile the chuck if the parameters change, only if the Guid does.
 		}
-
-		for (const auto& [Key, Param] : Settings.Params)
+		if (bFirstFrameForChuck) return;
+		
+		for (const auto& Param : Settings.Params)
 		{
 
 			const auto& TypeName = Param.ParamType;
 			switch (Param.ParamType)
 			{
 			case EAudioParameterType::Integer:
-				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Key.ToString()), Param.IntParam);
+				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Param.ParamName.ToString()), Param.IntParam);
 				break;
 			case EAudioParameterType::Float:
-				ChuckRef->globals()->setGlobalFloat(TCHAR_TO_ANSI(*Key.ToString()), Param.FloatParam);
+				ChuckRef->globals()->setGlobalFloat(TCHAR_TO_ANSI(*Param.ParamName.ToString()), Param.FloatParam);
 				break;
 			case EAudioParameterType::String:
-				ChuckRef->globals()->setGlobalString(TCHAR_TO_ANSI(*Key.ToString()), TCHAR_TO_UTF8(*Param.StringParam));
+				ChuckRef->globals()->setGlobalString(TCHAR_TO_ANSI(*Param.ParamName.ToString()), TCHAR_TO_UTF8(*Param.StringParam));
 				break;
 			case EAudioParameterType::Boolean:
-				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Key.ToString()), Param.BoolParam);
+				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Param.ParamName.ToString()), Param.BoolParam);
 				break;
 			default:
 				break;
@@ -67,10 +67,9 @@ inline void FSourceEffectChuck::OnPresetChanged()
 
 		}
 
-		if (!bRecompiledChuck)
-		{
-			ChuckRef->globals()->broadcastGlobalEvent("paramUpdate"); //a chance to update the parameters that need to be explicitly updated
-		}
+		ChuckRef->globals()->broadcastGlobalEvent("paramUpdate"); //a chance to update the parameters that need to be explicitly updated
+
+		
 	}
 
 
@@ -97,7 +96,7 @@ void FSubmixChuckEffect::OnPresetChanged()
 	//so we should only enter this block if we have a valid chuck processor
 	if (ChuckRef)
 	{
-		bool bRecompiledChuck = false;
+		
 		//if our GUID has changed, we need to recompile the chuck
 		if (CurrentChuckGuid != Settings.ChuckInstance->ChuckGuid)
 		{
@@ -114,30 +113,33 @@ void FSubmixChuckEffect::OnPresetChanged()
 
 			CurrentChuckGuid = Settings.ChuckInstance->ChuckGuid;
 			ChuckProcessor->CompileChuckAsset(ChuckRef);
-			bRecompiledChuck = true;
+			bFirstFrameForChuck = true;
 
 
 			//we should be good to go now, we'll deal with the parameters later, in theory we shouldn't recompile the chuck if the parameters change, only if the Guid does.
 		}
 
-		for (const auto& [Key, Param] : Settings.Params)
+		if (bFirstFrameForChuck) return;
+		
+
+		for (const auto& Param : Settings.Params)
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("Key: %s"), *Key.ToString());
+			//UE_LOG(LogTemp, Warning, TEXT("Param.Name: %s"), *Param.Name.ToString());
 			
 			const auto& TypeName = Param.ParamType;
 			switch (Param.ParamType)
 			{
 			case EAudioParameterType::Integer:
-				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Key.ToString()), Param.IntParam);
+				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Param.ParamName.ToString()), Param.IntParam);
 				break;
 			case EAudioParameterType::Float:
-				ChuckRef->globals()->setGlobalFloat(TCHAR_TO_ANSI(*Key.ToString()), Param.FloatParam);
+				ChuckRef->globals()->setGlobalFloat(TCHAR_TO_ANSI(*Param.ParamName.ToString()), Param.FloatParam);
 				break;
 			case EAudioParameterType::String:
-				ChuckRef->globals()->setGlobalString(TCHAR_TO_ANSI(*Key.ToString()), TCHAR_TO_UTF8(*Param.StringParam));
+				ChuckRef->globals()->setGlobalString(TCHAR_TO_ANSI(*Param.ParamName.ToString()), TCHAR_TO_UTF8(*Param.StringParam));
 				break;
 			case EAudioParameterType::Boolean:
-				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Key.ToString()), Param.BoolParam);
+				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Param.ParamName.ToString()), Param.BoolParam);
 				break;
 			default:
 				break;
@@ -147,10 +149,8 @@ void FSubmixChuckEffect::OnPresetChanged()
 		}
 
 
-		if (!bRecompiledChuck)
-		{
-			ChuckRef->globals()->broadcastGlobalEvent("paramUpdate"); //a chance to update the parameters that need to be explicitly updated
-		}
+		ChuckRef->globals()->broadcastGlobalEvent("paramUpdate"); //a chance to update the parameters that need to be explicitly updated
+
 	}
 
 }

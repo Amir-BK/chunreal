@@ -19,7 +19,7 @@ struct FSubmixChuckEffectSettings
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
-	TMap<FName, FAudioParameter > Params;
+	TArray<FAudioParameter > Params;
 
 
 	//chuck ref
@@ -44,9 +44,12 @@ class CHUNREAL_API FSubmixChuckEffect : public FSoundEffectSubmix
 	};
 	virtual void OnProcessAudio(const FSoundEffectSubmixInputData& InData, FSoundEffectSubmixOutputData& OutData) override
 	{
-		//check for updates 
-		//OnPresetChanged();
-		
+		if (bFirstFrameForChuck)
+		{
+			bFirstFrameForChuck = false;
+			OnPresetChanged();
+		}
+
 		FChunrealModule::RunChuck(ChuckRef, InData.AudioBuffer->GetData(), OutData.AudioBuffer->GetData(), InData.NumFrames);
 	};
 	//~ End FSoundEffectSubmix
@@ -65,7 +68,7 @@ class CHUNREAL_API FSubmixChuckEffect : public FSoundEffectSubmix
 
 	bool bHasSporkedOnce = false;
 
-
+	bool bFirstFrameForChuck = true; // this is a hack to pass the initialization parameters before we pass audio to the chuck
 	FGuid CurrentChuckGuid;
 	int32 SampleRate;
 	int32 NumChannels = 2;
@@ -107,7 +110,7 @@ struct CHUNREAL_API FSourceEffectChuckSettings
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
-	TMap<FName, FAudioParameter > Params;
+	TArray<FAudioParameter > Params;
 
 
 	//chuck ref
@@ -135,6 +138,11 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 
 	virtual void ProcessAudio(const FSoundEffectSourceInputData& InData, float* OutAudioBufferData) override
 	{
+		if (bFirstFrameForChuck)
+		{
+			bFirstFrameForChuck = false;
+			OnPresetChanged();
+		}
 		//Process samples by ChucK
 		FChunrealModule::RunChuck(ChuckRef, InData.InputSourceEffectBufferPtr, OutAudioBufferData, InData.NumSamples / NumChannels);
 	};
@@ -153,7 +161,7 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 
 
 	bool bHasSporkedOnce = false;
-
+	bool bFirstFrameForChuck = true; // this is a hack to pass the initialization parameters before we pass audio to the chuck
 
 	FGuid CurrentChuckGuid;
 	int32 SampleRate;

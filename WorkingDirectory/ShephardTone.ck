@@ -51,3 +51,5 @@ while( true )
     // advance time
     T => now;
 }
+
+fun void UCHUCK() {}; // another alternative to marking as an asset

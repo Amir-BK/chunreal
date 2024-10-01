@@ -78,7 +78,17 @@ public:
 		{
 			//we need the file name without the extensions
 			FString ChuckName = FPaths::GetBaseFilename(ChuckFile);
-			ChuckName.RemoveSpacesInline();
+			TArray<FString> ResultTokens;
+			FFileHelper::LoadFileToStringArrayWithPredicate(ResultTokens, *(WorkingDir + "/" + ChuckFile), [](const FString& Line) { return Line.Contains(TEXT("UCHUCK()")); });
+
+			if (ResultTokens.Num() == 0)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Chuck file: %s, does not contain a UCHUCK() definition, skipping."), *ChuckFile);
+				
+			}
+			else {
+				UE_LOG(LogTemp, Log, TEXT("Chuck file: %s, contains a UCHUCK() definition."), *ChuckFile);
+			}
 
 			//we may already have an asset for this chuck file
 			FString ChuckAssetPath = TEXT("/Chunreal/Chunreal/RuntimeChucks/") + ChuckName + TEXT(".") + ChuckName;
