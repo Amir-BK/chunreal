@@ -19,7 +19,7 @@ struct FSubmixChuckEffectSettings
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
-	TMap<FName, FAudioParameter > InitialParams;
+	TMap<FName, FAudioParameter > Params;
 
 
 	//chuck ref
@@ -44,6 +44,9 @@ class CHUNREAL_API FSubmixChuckEffect : public FSoundEffectSubmix
 	};
 	virtual void OnProcessAudio(const FSoundEffectSubmixInputData& InData, FSoundEffectSubmixOutputData& OutData) override
 	{
+		//check for updates 
+		OnPresetChanged();
+		
 		FChunrealModule::RunChuck(ChuckRef, InData.AudioBuffer->GetData(), OutData.AudioBuffer->GetData(), InData.NumFrames);
 	};
 	//~ End FSoundEffectSubmix
@@ -104,7 +107,7 @@ struct CHUNREAL_API FSourceEffectChuckSettings
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
-	TMap<FName, FAudioParameter > InitialParams;
+	TMap<FName, FAudioParameter > Params;
 
 
 	//chuck ref

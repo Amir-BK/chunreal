@@ -5,9 +5,11 @@ adc.right => Gain gR => dac.right;
 gL => Gain feedbackL => DelayL delayL => gL;
 gR => Gain feedbackR => DelayL delayR => gR;
 
+ 0.25  => global float delaytimeleft;
+
 // set delay parameters
-0.3::second => delayL.max => delayL.delay;
-0.5::second => delayR.max => delayR.delay;
+delaytimeleft::second => delayL.max => delayL.delay;
+delaytimeleft::second => delayR.max => delayR.delay;
 // set feedback
 0.8 => feedbackL.gain;
 0.8 => feedbackR.gain;
@@ -19,6 +21,10 @@ mixGain => delayL.gain;
 1 => delayR.gain;
 
 // infinite time loop
-while( true ) 1::second => now;
-
-//////////////////
+while( true ) { 	
+	0.1::second => now;
+//delaytimeleft::second => delayL.max => delayL.delay;
+//delaytimeleft::second => delayR.max => delayR.delay;
+//<<< delaytimeleft>>>;
+}
+//////////////////////

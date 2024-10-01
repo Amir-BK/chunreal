@@ -39,6 +39,31 @@ inline void FSourceEffectChuck::OnPresetChanged()
 
 			//we should be good to go now, we'll deal with the parameters later, in theory we shouldn't recompile the chuck if the parameters change, only if the Guid does.
 		}
+
+		for (const auto& [Key, Param] : Settings.Params)
+		{
+
+			const auto& TypeName = Param.ParamType;
+			switch (Param.ParamType)
+			{
+			case EAudioParameterType::Integer:
+				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Key.ToString()), Param.IntParam);
+				break;
+			case EAudioParameterType::Float:
+				ChuckRef->globals()->setGlobalFloat(TCHAR_TO_ANSI(*Key.ToString()), Param.FloatParam);
+				break;
+			case EAudioParameterType::String:
+				ChuckRef->globals()->setGlobalString(TCHAR_TO_ANSI(*Key.ToString()), TCHAR_TO_UTF8(*Param.StringParam));
+				break;
+			case EAudioParameterType::Boolean:
+				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Key.ToString()), Param.BoolParam);
+				break;
+			default:
+				break;
+			}
+
+
+		}
 	}
 
 
@@ -82,7 +107,34 @@ void FSubmixChuckEffect::OnPresetChanged()
 			CurrentChuckGuid = Settings.ChuckInstance->ChuckGuid;
 			ChuckProcessor->CompileChuckAsset(ChuckRef);
 
+
 			//we should be good to go now, we'll deal with the parameters later, in theory we shouldn't recompile the chuck if the parameters change, only if the Guid does.
+		}
+
+		for (const auto& [Key, Param] : Settings.Params)
+		{
+			//UE_LOG(LogTemp, Warning, TEXT("Key: %s"), *Key.ToString());
+			
+			const auto& TypeName = Param.ParamType;
+			switch (Param.ParamType)
+			{
+			case EAudioParameterType::Integer:
+				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Key.ToString()), Param.IntParam);
+				break;
+			case EAudioParameterType::Float:
+				ChuckRef->globals()->setGlobalFloat(TCHAR_TO_ANSI(*Key.ToString()), Param.FloatParam);
+				break;
+			case EAudioParameterType::String:
+				ChuckRef->globals()->setGlobalString(TCHAR_TO_ANSI(*Key.ToString()), TCHAR_TO_UTF8(*Param.StringParam));
+				break;
+			case EAudioParameterType::Boolean:
+				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Key.ToString()), Param.BoolParam);
+				break;
+			default:
+				break;
+			}
+
+
 		}
 	}
 

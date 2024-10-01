@@ -14,7 +14,7 @@
 // normalize to 1.0 at x==MU
 1 / Math.gauss(MU, MU, SIGMA) => float SCALE;
 // increment per unit time (use negative for descending)
-.004 => float INC;
+.004 => global float INC;
 // unit time (change interval)
 1::ms => dur T;
 
