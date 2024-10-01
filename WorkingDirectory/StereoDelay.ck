@@ -1,22 +1,22 @@
 // feedforward
-adc => Gain gL => dac.left;
-adc => Gain gR => dac.right;
+adc.left => Gain gL => dac.left;
+adc.right => Gain gR => dac.right;
 // feedback
 gL => Gain feedbackL => DelayL delayL => gL;
 gR => Gain feedbackR => DelayL delayR => gR;
 
 // set delay parameters
-.175::second => delayL.max => delayL.delay;
-0.95::second => delayR.max => delayR.delay;
+0.3::second => delayL.max => delayL.delay;
+0.5::second => delayR.max => delayR.delay;
 // set feedback
-1.9 => feedbackL.gain;
-.9 => feedbackR.gain;
+0.8 => feedbackL.gain;
+0.8 => feedbackR.gain;
 // set effects mix
 
-0.5 => float mixGain;
+1 => float mixGain;
 
 mixGain => delayL.gain;
-mixGain => delayR.gain;
+1 => delayR.gain;
 
 // infinite time loop
 while( true ) 1::second => now;

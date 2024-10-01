@@ -11,7 +11,7 @@ inline void FSourceEffectChuck::OnPresetChanged()
 		ChuckProcessor = Settings.ChuckInstance;
 		if (IsValid(ChuckProcessor))
 		{
-			ChuckRef = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate);
+			ChuckRef = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate, NumChannels);
 			ChuckRef->init();
 			ChuckRef->start();
 		}

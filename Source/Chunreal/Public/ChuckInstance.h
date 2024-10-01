@@ -47,7 +47,7 @@ public:
 	bool bShareChuck = false;
 
 	//spawn chuck with optional instance ID for registration with the module, we'll see about destroying it later
-	ChucK* SpawnChuckFromAsset(FString InstanceID = FString(), int32 InSampleRate = 48000);
+	ChucK* SpawnChuckFromAsset(FString InstanceID = FString(), int32 InSampleRate = 48000, int32 InNumChannels = 2);
 
 	void CompileChuckAsset(ChucK* chuckRef);
 

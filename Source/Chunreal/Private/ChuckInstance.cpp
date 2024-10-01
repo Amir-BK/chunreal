@@ -28,7 +28,7 @@ bool UChuckProcessor::CompileChuckCode()
 	return false;
 }
 
-ChucK* UChuckProcessor::SpawnChuckFromAsset(FString InstanceID, int32 InSampleRate)
+ChucK* UChuckProcessor::SpawnChuckFromAsset(FString InstanceID, int32 InSampleRate, int32 InNumChannels)
 {
 	ChucK* theChuck = new ChucK();
 	
@@ -38,8 +38,8 @@ ChucK* UChuckProcessor::SpawnChuckFromAsset(FString InstanceID, int32 InSampleRa
 	theChuck->setLogLevel(5);
 	//Initialize Chuck params
 	theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, InSampleRate);
-	theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
-	theChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, 2);
+	theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, InNumChannels);
+	theChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, InNumChannels);
 	theChuck->setParam(CHUCK_PARAM_VM_ADAPTIVE, 0);
 	theChuck->setParam(CHUCK_PARAM_VM_HALT, (t_CKINT)(false));
 	//Chuck->setParam(CHUCK_PARAM_OTF_PORT, g_otf_port);

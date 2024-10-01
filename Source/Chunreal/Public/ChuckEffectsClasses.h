@@ -119,7 +119,7 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 		//data is interleaved
 		if (!bHasBufferInitialized)
 		{
-			InitBuffers(InData.NumSamples);
+			//InitBuffers(InData.NumSamples);
 		}
 
 		//check for updates 
@@ -127,23 +127,25 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 
 
 		//copy interleaved data to our buffer
-		for (int32 i = 0; i < InData.NumSamples; i++)
-		{
-			inBufferInterleaved[i * 2] = InData.InputSourceEffectBufferPtr[i];
-			inBufferInterleaved[i * 2 + 1] = InData.InputSourceEffectBufferPtr[i];
-		}
+		//for (int32 i = 0; i < InData.NumSamples / NumChannels; i++)
+		//{
+		//	inBufferInterleaved[i * 2] = InData.InputSourceEffectBufferPtr[i];
+		//	inBufferInterleaved[i * 2 + 1] = InData.InputSourceEffectBufferPtr[i];
+		//}
 
 
 		//Process samples by ChucK
-		FChunrealModule::RunChuck(ChuckRef, inBufferInterleaved, outBufferInterleaved, InData.NumSamples);
+		FChunrealModule::RunChuck(ChuckRef, InData.InputSourceEffectBufferPtr, OutAudioBufferData, InData.NumSamples / NumChannels);
 
 		//copy interleaved data to our buffer
-		for (int32 i = 0; i < InData.NumSamples; i++)
+		for (int32 i = 0; i < InData.NumSamples / 2 ; i++)
 		{
-			OutAudioBufferData[i] = outBufferInterleaved[i * 2];
+			//OutAudioBufferData[i] = outBufferInterleaved[i];
+			//OutAudioBufferData[i + 1] = outBufferInterleaved[i];
 
 
 		}
+
 
 	};
 
@@ -167,8 +169,8 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 
 	void InitBuffers(int32 NumSamples)
 	{
-		inBufferInterleaved = new float[NumSamples * 2];
-		outBufferInterleaved = new float[NumSamples * 2];
+		inBufferInterleaved = new float[NumSamples * NumChannels];
+		outBufferInterleaved = new float[NumSamples * NumChannels];
 
 		bHasBufferInitialized = true;
 	}
@@ -176,10 +178,13 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 	bool bHasSporkedOnce = false;
 	bool bHasBufferInitialized = false;
 
+
+
 	float* inBufferInterleaved;
 	float* outBufferInterleaved;
 	FGuid CurrentChuckGuid;
 	int32 SampleRate;
+	int32 NumChannels = 2;
 	ChucK* ChuckRef = nullptr;
 	TObjectPtr<UChuckProcessor> ChuckProcessor; // should really make this name consistent with the rest of the codebase
 };
