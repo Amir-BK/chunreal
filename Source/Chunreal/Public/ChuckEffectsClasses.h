@@ -4,27 +4,29 @@
 #include "DSP/Dsp.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Sound/SoundEffectSubmix.h"
+#include "Sound/SoundEffectSource.h"
+#include "ChuckInstance.h"
+#include "Chunreal.h"
 
 #include "ChuckEffectsClasses.generated.h"
+
+#pragma region ChuckSubmixEffect
 
 USTRUCT(BlueprintType)
 struct FSubmixChuckEffectSettings
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Initialization, meta = (ClampMin = "10.0", UIMin = "10.0", UIMax = "20000.0"))
-	float MaximumDelayLength;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
+	TMap<FName, FAudioParameter > InitialParams;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime, meta = (ClampMin = "0.0", UIMin = "0.0", UIMax = "20000.0"))
-	float InterpolationTime;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime, meta = (ClampMin = "0.0", UIMin = "0.0", UIMax = "20000.0"))
-	float DelayLength;
+	//chuck ref
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
+	TObjectPtr<UChuckProcessor> ChuckInstance;
 
 	FSubmixChuckEffectSettings()
-		: MaximumDelayLength(2000.0f)
-		, InterpolationTime(400.0f)
-		, DelayLength(1000.0f)
+
 	{
 	}
 };
@@ -69,3 +71,67 @@ class CHUNREAL_API USubmixChuckEffectPreset : public USoundEffectSubmixPreset
 
 
 };
+
+#pragma endregion
+
+#pragma region ChuckSourceEffect
+
+USTRUCT(BlueprintType)
+struct CHUNREAL_API FSourceEffectChuckSettings
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
+	TMap<FName, FAudioParameter > InitialParams;
+
+
+	//chuck ref
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
+	TObjectPtr<UChuckProcessor> ChuckInstance;
+
+	FSourceEffectChuckSettings()
+	{
+	}
+};
+
+class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
+{
+	virtual void Init(const FSoundEffectSourceInitData& InitData) override
+	{
+
+	};
+
+	virtual void OnPresetChanged() override
+	{
+
+	};
+
+	virtual void ProcessAudio(const FSoundEffectSourceInputData& InData, float* OutAudioBufferData) override
+	{
+
+	};
+};
+
+UCLASS(ClassGroup = AudioSourceEffect, meta = (BlueprintSpawnableComponent))
+class CHUNREAL_API USourceEffectChuckPreset : public USoundEffectSourcePreset
+{
+	GENERATED_BODY()
+public:
+	EFFECT_PRESET_METHODS(SourceEffectChuck)
+
+		virtual void OnInit() override {};
+
+	UFUNCTION(BlueprintCallable, Category = "Audio|Effects|Delay")
+	void SetDefaultSettings(const FSourceEffectChuckSettings& InSettings)
+	{
+		FScopeLock ScopeLock(&SettingsCritSect);
+		SettingsCopy = InSettings;
+		Update();
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, BlueprintSetter = SetDefaultSettings, Category = SourceEffectPreset, Meta = (ShowOnlyInnerProperties))
+	FSourceEffectChuckSettings Settings;
+
+};
+
+#pragma endregion
