@@ -135,10 +135,6 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 
 	virtual void ProcessAudio(const FSoundEffectSourceInputData& InData, float* OutAudioBufferData) override
 	{
-
-		//check for updates 
-		//OnPresetChanged();
-
 		//Process samples by ChucK
 		FChunrealModule::RunChuck(ChuckRef, InData.InputSourceEffectBufferPtr, OutAudioBufferData, InData.NumSamples / NumChannels);
 	};

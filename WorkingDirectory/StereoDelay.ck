@@ -7,6 +7,8 @@ gR => Gain feedbackR => DelayL delayR => gR;
 
  0.25  => global float delaytimeleft;
 
+global Event paramUpdate;
+
 // set delay parameters
 delaytimeleft::second => delayL.max => delayL.delay;
 delaytimeleft::second => delayR.max => delayR.delay;
@@ -22,7 +24,11 @@ mixGain => delayL.gain;
 
 // infinite time loop
 while( true ) { 	
-	0.1::second => now;
+	paramUpdate=> now;
+	delaytimeleft::second => delayL.max => delayL.delay;
+	delaytimeleft::second => delayR.max => delayR.delay;
+	<<< "Params updated from event" >>>;
+	1::second => now;
 //delaytimeleft::second => delayL.max => delayL.delay;
 //delaytimeleft::second => delayR.max => delayR.delay;
 //<<< delaytimeleft>>>;
