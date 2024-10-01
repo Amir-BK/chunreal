@@ -35,7 +35,7 @@ ChucK* UChuckProcessor::SpawnChuckFromAsset(FString InstanceID, int32 InSampleRa
 	//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Creating new chuck for asset: %s"));
 
 	theChuck = new ChucK();
-	theChuck->setLogLevel(9);
+	theChuck->setLogLevel(1);
 	//Initialize Chuck params
 	theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, InSampleRate);
 	theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, InNumChannels);
