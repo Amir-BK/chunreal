@@ -48,6 +48,8 @@ protected:
 	/** Default style used by the TextLayout */
 	FTextBlockStyle DefaultTextStyle;
 
+	TSharedPtr<FTextSelection> HoveredToken;
+
 private:
 
 	TSlotlessChildren< SWidget > Children;

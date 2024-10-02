@@ -301,8 +301,41 @@ FTextSelection FChunrealSlateTextLayout::GetWordAtWithSyntaxAwareness(FTextLocat
 
 	const FLineModel& LineModel = LineModels[LineIndex];
 
-	//early return if out of bounds
-	if (LineModel.Text->IsEmpty() || Offset >= LineModel.Text->Len())
+	WordBreakIterator->SetStringRef(&LineModel.Text.Get());
+
+	int32 PreviousBreak = (Offset < LineModel.Text->Len()) ? WordBreakIterator->MoveToCandidateAfter(Offset) : WordBreakIterator->ResetToEnd();
+	int32 CurrentBreak = 0;
+
+	while ((CurrentBreak = WordBreakIterator->MoveToPrevious()) != INDEX_NONE)
+	{
+		bool HasLetter = false;
+		for (int32 Index = CurrentBreak; Index < PreviousBreak; Index++)
+		{
+			if (!FText::IsWhitespace((*LineModel.Text)[Index]))
+			{
+				HasLetter = true;
+				break;
+			}
+		}
+
+		if (HasLetter)
+		{
+			break;
+		}
+
+		PreviousBreak = CurrentBreak;
+	}
+
+	WordBreakIterator->ClearString();
+
+	if (PreviousBreak == CurrentBreak || CurrentBreak == INDEX_NONE)
+	{
+		return FTextSelection();
+	}
+
+	auto WordSelection = FTextSelection(FTextLocation(LineIndex, CurrentBreak), FTextLocation(LineIndex, PreviousBreak));
+
+	if (LineModel.Text->IsEmpty() || Offset >= LineModel.Text.Get().Len() -1)
 	{
 		return FTextSelection();
 	}
@@ -310,26 +343,30 @@ FTextSelection FChunrealSlateTextLayout::GetWordAtWithSyntaxAwareness(FTextLocat
 	//early return if currently hovered character is a whitespace or a dot
 	if ((*LineModel.Text)[Offset] == ' ' || (*LineModel.Text)[Offset] == '.')
 	{
-		return FTextSelection(FTextLocation(LineIndex, Offset), FTextLocation(LineIndex, Offset));
+		return FTextSelection();
 	}
 
 
-	int32 CurrentBreak = Offset;
-	int32 PreviousBreak = Offset;
+	int32 TokenStart = Offset;
+	int32 TokenEnd = Offset;
 
 	// Find the next word break, walk forwards to find the end of the word
-	for (CurrentBreak; CurrentBreak < LineModel.Text->Len(); ++CurrentBreak)
+	for (TokenStart; TokenStart < WordSelection.GetEnd().GetOffset(); ++TokenStart)
 	{
-		if (!IsAlphaOrDigit((*LineModel.Text)[CurrentBreak])) break;
+		if (!IsAlphaOrDigit((*LineModel.Text)[TokenStart])) break;
 	}
 
 	// now walk backward
-	for (PreviousBreak; PreviousBreak >= 0; --PreviousBreak)
+	for (TokenEnd; TokenEnd > WordSelection.GetBeginning().GetOffset(); TokenEnd--)
 	{
-		if (!IsAlphaOrDigit((*LineModel.Text)[PreviousBreak])) break;
+		if (!IsAlphaOrDigit((*LineModel.Text)[TokenEnd - 1])) break;
 	}
 
-	return FTextSelection(FTextLocation(LineIndex, CurrentBreak), FTextLocation(LineIndex, PreviousBreak));
+	auto HoveredTokenNew = FTextSelection(FTextLocation(LineIndex, TokenStart), FTextLocation(LineIndex, TokenEnd));
+	//HoveredToken(FTextSelection(FTextLocation(LineIndex, CurrentBreak), FTextLocation(LineIndex, PreviousBreak));
+	//HoveredToken = &HoveredTokenNew;
+
+	return HoveredTokenNew;
 }
 
 void FChunrealSlateTextLayout::AggregateChildren()
