@@ -73,14 +73,14 @@ bool IsCharAllowed(const TCHAR InChar)
 
 }
 
-FChunrealSlateEditableTextLayout::FChunrealSlateEditableTextLayout(IChunrealSlateEditableTextWidget& InOwnerWidget, const TAttribute<FText>& InInitialText, FTextBlockStyle InTextStyle, const TOptional<ETextShapingMethod> InTextShapingMethod, const TOptional<ETextFlowDirection> InTextFlowDirection, const FCreateSlateTextLayout& InCreateSlateTextLayout, TSharedRef<ITextLayoutMarshaller> InTextMarshaller, TSharedRef<ITextLayoutMarshaller> InHintTextMarshaller)
+FChunrealSlateEditableTextLayout::FChunrealSlateEditableTextLayout(IChunrealSlateEditableTextWidget& InOwnerWidget, const TAttribute<FText>& InInitialText, FTextBlockStyle InTextStyle, const TOptional<ETextShapingMethod> InTextShapingMethod, const TOptional<ETextFlowDirection> InTextFlowDirection, const FCreateChunrealSlateTextLayout& InCreateSlateTextLayout, TSharedRef<ITextLayoutMarshaller> InTextMarshaller, TSharedRef<ITextLayoutMarshaller> InHintTextMarshaller)
 {
 	CreateSlateTextLayout = InCreateSlateTextLayout;
 	if (!CreateSlateTextLayout.IsBound())
 	{
 		CreateSlateTextLayout.BindLambda([](SWidget* InOwningWidget, const FTextBlockStyle& InDefaultTextStyle) 
 			{
-				return FSlateTextLayout::Create(InOwningWidget, InDefaultTextStyle);
+				return FChunrealSlateTextLayout::Create(InOwningWidget, InDefaultTextStyle);
 			});
 	}
 
@@ -280,17 +280,17 @@ void FChunrealSlateEditableTextLayout::SetHintText(const TAttribute<FText>& InHi
 {
 	HintText = InHintText;
 
-	// If we have hint text that is either non-empty or bound to a delegate, we'll also need to make the hint text layout
-	if (HintText.IsBound() || !HintText.Get(FText::GetEmpty()).IsEmpty())
-	{
-		HintTextStyle = TextStyle;
-		HintTextLayout = MakeUnique<FSlateTextBlockLayout>(OwnerWidget->GetSlateWidgetPtr().Get(), HintTextStyle, TextLayout->GetTextShapingMethod(), TextLayout->GetTextFlowDirection(), CreateSlateTextLayout, HintMarshaller.ToSharedRef(), nullptr);
-		HintTextLayout->SetDebugSourceInfo(DebugSourceInfo);
-	}
-	else
-	{
-		HintTextLayout.Reset();
-	}
+	//// If we have hint text that is either non-empty or bound to a delegate, we'll also need to make the hint text layout
+	//if (HintText.IsBound() || !HintText.Get(FText::GetEmpty()).IsEmpty())
+	//{
+	//	HintTextStyle = TextStyle;
+	//	HintTextLayout = MakeUnique<FSlateTextBlockLayout>(OwnerWidget->GetSlateWidgetPtr().Get(), HintTextStyle, TextLayout->GetTextShapingMethod(), TextLayout->GetTextFlowDirection(), CreateSlateTextLayout, HintMarshaller.ToSharedRef(), nullptr);
+	//	HintTextLayout->SetDebugSourceInfo(DebugSourceInfo);
+	//}
+	//else
+	//{
+	//	HintTextLayout.Reset();
+	//}
 
 	OwnerWidget->GetSlateWidget()->Invalidate(EInvalidateWidget::LayoutAndVolatility);
 }
@@ -1895,6 +1895,9 @@ void FChunrealSlateEditableTextLayout::HighlightTokenUnderCursor(const UE::Slate
 		HighlightedToken = WordSelection;
 		//find the token!
 
+		//if out token contains a "." we need to split it to two out tokens and find the range of each
+
+	
 		HighLightTokenString = OutToken;
 
 

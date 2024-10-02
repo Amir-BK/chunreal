@@ -83,7 +83,7 @@ class CHUNREAL_API FChucKSyntaxHighlighterMarshaller : public FSyntaxHighlighter
 		NormalTextStyle.SetHighlightColor(FLinearColor::White);
 
 		FTextBlockStyle OperatorTextStyle = FTextBlockStyle(NormalTextStyle);
-		OperatorTextStyle.SetColorAndOpacity(FLinearColor(FColor(0xffcfcfcf)));
+		OperatorTextStyle.SetColorAndOpacity(FLinearColor::Red);
 
 
 		//make styles for the rest of the syntax

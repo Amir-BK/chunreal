@@ -209,7 +209,7 @@ public:
 		SLATE_EVENT(FMenuExtensionDelegate, ContextMenuExtender)
 
 		/** Delegate used to create text layouts for this widget. If none is provided then FSlateTextLayout will be used. */
-		SLATE_EVENT(FCreateSlateTextLayout, CreateSlateTextLayout)
+		SLATE_EVENT(FCreateChunrealSlateTextLayout, CreateSlateTextLayout)
 
 		/** The optional modifier key necessary to create a newline when typing into the editor. */
 		SLATE_ARGUMENT(EModifierKey::Type, ModiferKeyForNewLine)

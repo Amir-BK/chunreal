@@ -12,15 +12,16 @@
 #include "Framework/Application/IMenu.h"
 #include "Widgets/Input/IVirtualKeyboardEntry.h"
 #include "IChunrealSlateEditableTextWidget.h"
-#include "Widgets/Text/SlateEditableTextLayout.h"
+//#include "Widgets/Text/SlateEditableTextLayout.h"
 #include "Framework/Text/ITextLayoutMarshaller.h"
 #include "Framework/Text/TextLineHighlight.h"
 #include "Framework/Text/IRun.h"
 #include "Framework/Text/TextLayout.h"
 #include "Widgets/Text/SlateEditableTextTypes.h"
 #include "Widgets/Input/SEditableText.h"
-#include "Framework/Text/SlateTextLayoutFactory.h"
+//#include "Framework/Text/SlateTextLayoutFactory.h"
 #include "GenericPlatform/ITextInputMethodSystem.h"
+#include <ChunrealSlateTextLayout.h>
 
 class FArrangedChildren;
 class FExtender;
@@ -32,6 +33,8 @@ class IBreakIterator;
 class SWindow;
 enum class ETextShapingMethod : uint8;
 
+DECLARE_DELEGATE_RetVal_TwoParams(TSharedRef<FChunrealSlateTextLayout>, FCreateChunrealSlateTextLayout, SWidget*, const FTextBlockStyle&);
+
 /** Class to handle the cached layout of SEditableText/SMultiLineEditableText by proxying around a FTextLayout */
 class FChunrealSlateEditableTextLayout
 {
@@ -40,7 +43,7 @@ class FChunrealSlateEditableTextLayout
 	FString HighLightTokenString = FString();
 
 public:
-	CHUNREAL_API FChunrealSlateEditableTextLayout(IChunrealSlateEditableTextWidget& InOwnerWidget, const TAttribute<FText>& InInitialText, FTextBlockStyle InTextStyle, const TOptional<ETextShapingMethod> InTextShapingMethod, const TOptional<ETextFlowDirection> InTextFlowDirection, const FCreateSlateTextLayout& InCreateSlateTextLayout, TSharedRef<ITextLayoutMarshaller> InTextMarshaller, TSharedRef<ITextLayoutMarshaller> InHintTextMarshaller);
+	CHUNREAL_API FChunrealSlateEditableTextLayout(IChunrealSlateEditableTextWidget& InOwnerWidget, const TAttribute<FText>& InInitialText, FTextBlockStyle InTextStyle, const TOptional<ETextShapingMethod> InTextShapingMethod, const TOptional<ETextFlowDirection> InTextFlowDirection, const FCreateChunrealSlateTextLayout& InCreateSlateTextLayout, TSharedRef<ITextLayoutMarshaller> InTextMarshaller, TSharedRef<ITextLayoutMarshaller> InHintTextMarshaller);
 	CHUNREAL_API ~FChunrealSlateEditableTextLayout();
 
 	CHUNREAL_API void SetText(const TAttribute<FText>& InText);
@@ -537,10 +540,10 @@ private:
 	TSharedPtr<ITextLayoutMarshaller> HintMarshaller;
 
 	/** Delegate used to create internal text layouts. */
-	FCreateSlateTextLayout CreateSlateTextLayout;
+	FCreateChunrealSlateTextLayout CreateSlateTextLayout;
 
 	/** In control of the layout and wrapping of the BoundText */
-	TSharedPtr<FSlateTextLayout> TextLayout;
+	TSharedPtr<FChunrealSlateTextLayout> TextLayout;
 
 	/** In control of the layout and wrapping of the HintText */
 	TUniquePtr<FSlateTextBlockLayout> HintTextLayout;

@@ -274,6 +274,7 @@ protected:
 							check(SyntaxTokenEnd <= LineRange.EndIndex);
 
 							bHasMatchedSyntax = true;
+							UE_CLOG(bHasMatchedSyntax, LogTemp, Warning, TEXT("Matched Operator: %s"), *Operator);
 							CurrentOffset = SyntaxTokenEnd;
 							break;
 						}
