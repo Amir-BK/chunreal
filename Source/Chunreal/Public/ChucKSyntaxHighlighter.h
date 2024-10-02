@@ -83,7 +83,8 @@ class CHUNREAL_API FChucKSyntaxHighlighterMarshaller : public FSyntaxHighlighter
 		NormalTextStyle.SetHighlightColor(FLinearColor::White);
 
 		FTextBlockStyle OperatorTextStyle = FTextBlockStyle(NormalTextStyle);
-		OperatorTextStyle.SetColorAndOpacity(FLinearColor::Red);
+		// pink!
+		OperatorTextStyle.SetColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.75f, 1.0f));
 		//operators are bold
 		OperatorTextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("Bold", 12));
 
