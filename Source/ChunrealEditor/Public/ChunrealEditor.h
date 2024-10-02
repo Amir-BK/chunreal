@@ -137,7 +137,7 @@ public:
 	{
 		if (UToolMenus::IsToolMenuUIEnabled())
 		{
-			UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Tools");
+			UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("MainFrame.MainMenu.Tools");
 			FToolMenuSection& Section = Menu->FindOrAddSection("Programming");
 
 			FToolMenuOwnerScoped OwnerScoped(this);
