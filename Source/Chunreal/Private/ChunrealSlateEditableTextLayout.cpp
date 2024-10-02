@@ -1875,6 +1875,45 @@ void FChunrealSlateEditableTextLayout::SelectWordAt(const UE::Slate::FDeprecateV
 	}
 }
 
+void FChunrealSlateEditableTextLayout::HighlightTokenUnderCursor(const UE::Slate::FDeprecateVector2DParameter& InLocalPosition)
+{
+	FTextSelection OriginalSelection = GetSelection();
+	
+	FTextLocation InitialLocation = TextLayout->GetTextLocationAt(FVector2d(InLocalPosition));
+	FTextSelection WordSelection = TextLayout->GetWordAt(InitialLocation);
+
+	FTextLocation WordStart = WordSelection.GetBeginning();
+	FTextLocation WordEnd = WordSelection.GetEnd();
+
+	if (WordStart.IsValid() && WordEnd.IsValid())
+	{
+	
+		FString OutToken;
+		FText AsText;
+		TextLayout->GetSelectionAsText(OutToken, WordSelection);
+		TextLayout->GetAsText(AsText);
+		HighlightedToken = WordSelection;
+		//find the token!
+
+		HighLightTokenString = OutToken;
+
+
+
+		//revert to original selection cause it's stupid
+		//TextLayout->GetSelectionAsText(OutToken, OriginalSelection);
+
+		//UE_LOG(LogTemp, Warning, TEXT("Token: %s"), *OutToken);
+
+	}
+	else {
+		HighlightedToken = FTextSelection();
+	}
+
+
+}
+
+
+
 void FChunrealSlateEditableTextLayout::SelectText(const FTextLocation& InSelectionStart, const FTextLocation& InCursorLocation)
 {
 	if (TextLayout->IsEmpty())
@@ -3575,6 +3614,24 @@ int32 FChunrealSlateEditableTextLayout::OnPaint(const FPaintArgs& Args, const FG
 	}
 
 	LayerId = TextLayout->OnPaint(Args, AllottedGeometry, MyCullingRect, OutDrawElements, LayerId, InWidgetStyle, bParentEnabled);
+
+	//paint only highlighted token in PINK, if anything highlighted
+	if (HighlightedToken.GetBeginning() != HighlightedToken.GetEnd())
+	{
+
+		auto TopRightCornerPaintGeometry = AllottedGeometry.ToPaintGeometry(FVector2D(AllottedGeometry.Size.X -200.0f, 0), AllottedGeometry.Size);
+
+		FSlateDrawElement::MakeText(
+			OutDrawElements,
+			LayerId++,
+			TopRightCornerPaintGeometry,
+			*HighLightTokenString,
+			FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Regular.ttf"), 22),ESlateDrawEffect::None, FLinearColor(0.8f, 0.0f, 1.0f, 1.0f)
+		);
+
+	}
+
+
 
 	return LayerId;
 }

@@ -35,6 +35,10 @@ enum class ETextShapingMethod : uint8;
 /** Class to handle the cached layout of SEditableText/SMultiLineEditableText by proxying around a FTextLayout */
 class FChunrealSlateEditableTextLayout
 {
+
+	FTextSelection HighlightedToken = FTextSelection();
+	FString HighLightTokenString = FString();
+
 public:
 	CHUNREAL_API FChunrealSlateEditableTextLayout(IChunrealSlateEditableTextWidget& InOwnerWidget, const TAttribute<FText>& InInitialText, FTextBlockStyle InTextStyle, const TOptional<ETextShapingMethod> InTextShapingMethod, const TOptional<ETextFlowDirection> InTextFlowDirection, const FCreateSlateTextLayout& InCreateSlateTextLayout, TSharedRef<ITextLayoutMarshaller> InTextMarshaller, TSharedRef<ITextLayoutMarshaller> InHintTextMarshaller);
 	CHUNREAL_API ~FChunrealSlateEditableTextLayout();
@@ -235,6 +239,9 @@ public:
 
 	/** Select the word under the given position (the position is local to the text layout space) */
 	CHUNREAL_API void SelectWordAt(const UE::Slate::FDeprecateVector2DParameter& InLocalPosition);
+
+	/** Get the word under the given position */
+	CHUNREAL_API void HighlightTokenUnderCursor(const UE::Slate::FDeprecateVector2DParameter& InLocalPosition);
 
 	/** Select a block of text */
 	CHUNREAL_API void SelectText(const FTextLocation& InSelectionStart, const FTextLocation& InCursorLocation);
