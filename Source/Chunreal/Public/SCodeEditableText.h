@@ -9,7 +9,7 @@ class SScrollBar;
 
 class ITextLayoutMarshaller;
 
-class SBkCodeEditableText : public SChunrealMultiLineEditableText
+class CHUNREAL_API SBkCodeEditableText : public SChunrealMultiLineEditableText
 {
 	SLATE_BEGIN_ARGS( SBkCodeEditableText )
 	{}

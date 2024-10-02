@@ -6,7 +6,7 @@
 
 class ISlateStyle;
 
-class FCodeEditorStyle
+class CHUNREAL_API FCodeEditorStyle
 {
 public:
 
