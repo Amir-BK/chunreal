@@ -8,7 +8,7 @@ public class Chunreal : ModuleRules
         bEnableExceptions = true;
         IWYUSupport = IWYUSupport.None;
 
-        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDefinitions.Add("__DISABLE_MIDI__");
         PublicDefinitions.Add("__DISABLE_WATCHDOG__");
@@ -56,8 +56,21 @@ public class Chunreal : ModuleRules
 				"Slate",
 				"SlateCore",
 				"UMG",
-				"Projects"
+				"Projects",
+				"InputCore",
+				"ImageWrapper",
+				"Json"
 			}
             );
-    }
+
+		if (Target.bCompileAgainstApplicationCore)
+		{
+			PublicDependencyModuleNames.Add("ApplicationCore");
+		}
+
+
+
+
+
+	}
 }

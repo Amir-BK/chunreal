@@ -2,13 +2,14 @@
 
 #pragma once
 
-#include "Widgets/Text/SMultiLineEditableText.h"
+//#include "Widgets/Text/SMultiLineEditableText.h"
+#include "SChunrealMultiLineEditableText.h"
 
 class SScrollBar;
 
 class ITextLayoutMarshaller;
 
-class SBkCodeEditableText : public SMultiLineEditableText
+class SBkCodeEditableText : public SChunrealMultiLineEditableText
 {
 	SLATE_BEGIN_ARGS( SBkCodeEditableText )
 	{}

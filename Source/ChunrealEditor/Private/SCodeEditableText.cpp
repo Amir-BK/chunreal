@@ -7,8 +7,8 @@
 
 void SBkCodeEditableText::Construct( const FArguments& InArgs )
 {
-	SMultiLineEditableText::Construct(
-		SMultiLineEditableText::FArguments()
+	SChunrealMultiLineEditableText::Construct(
+		SChunrealMultiLineEditableText::FArguments()
 		.Font(FCodeEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>("TextEditor.NormalText").Font)
 		.TextStyle(&FCodeEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>("TextEditor.NormalText"))
 		.Text(InArgs._Text)
@@ -53,7 +53,7 @@ FReply SBkCodeEditableText::OnKeyChar(const FGeometry& MyGeometry, const FCharac
 	}
 	else
 	{
-		Reply = SMultiLineEditableText::OnKeyChar( MyGeometry, InCharacterEvent );
+		Reply = SChunrealMultiLineEditableText::OnKeyChar( MyGeometry, InCharacterEvent );
 	}
 
 	return Reply;
@@ -88,7 +88,7 @@ FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEve
 	//key up down 
 	if (InKeyEvent.GetKey() == EKeys::Up || InKeyEvent.GetKey() == EKeys::Down)
 	{
-		return SMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
+		return SChunrealMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
 	}
 
 	// if left right we also want to check if ctrl is checked, if it is we want to do simple caret movement
@@ -96,7 +96,7 @@ FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEve
 	{
 		if (!InKeyEvent.IsControlDown())
 		{
-			return SMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
+			return SChunrealMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
 		}
 		else {
 
@@ -122,7 +122,7 @@ FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEve
 		if (InKeyEvent.GetKey() == EKeys::C || InKeyEvent.GetKey() == EKeys::V || InKeyEvent.GetKey() == EKeys::X ||
 			InKeyEvent.GetKey() == EKeys::Z || InKeyEvent.GetKey() == EKeys::Y || /* select all*/ InKeyEvent.GetKey() == EKeys::A)
 		{
-			return SMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
+			return SChunrealMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
 		}
 	}
 
@@ -163,7 +163,7 @@ FReply SBkCodeEditableText::OnMouseMove(const FGeometry& MyGeometry, const FPoin
 	{
 		CurrentlyHoveredWord = SelectedWord;
 		//print it, for now
-		//UE_LOG(LogTemp, Warning, TEXT("word under mouse is word: %s"), *SelectedWord.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("word under mouse is word: %s"), *SelectedWord.ToString());
 	}
 
 	//print it, for now
@@ -172,7 +172,7 @@ FReply SBkCodeEditableText::OnMouseMove(const FGeometry& MyGeometry, const FPoin
 	//revert selection to original
 	EditableTextLayout->SelectText(OriginalSelectionRange.GetBeginning(), OriginalSelectionRange.GetEnd());
 
-	return SMultiLineEditableText::OnMouseMove(MyGeometry, MouseEvent);
+	return SChunrealMultiLineEditableText::OnMouseMove(MyGeometry, MouseEvent);
 }
 
 void SBkCodeEditableText::RemoveTabOnAllSelectedLines()

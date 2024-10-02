@@ -19,6 +19,7 @@
 #include "Engine/AssetManager.h"
 #include "ChunrealAssetClasses.h"
 #include "Interfaces/IPluginManager.h"
+#include "ObjectTools.h"
 #include "IAssetTools.h"
 
 
@@ -73,6 +74,8 @@ public:
 		TArray<FAssetData> AssetData;
 		AssetRegistryModule.Get().GetAssetsByClass(UChuckProcessor::StaticClass()->GetClassPathName(), AssetData, true);
 
+		
+
 		//for out test, construct a transient UChuckProcessor for each chuck file
 		for (const FString& ChuckFile : ChuckFiles)
 		{
@@ -80,16 +83,9 @@ public:
 			FString ChuckName = FPaths::GetBaseFilename(ChuckFile);
 			TArray<FString> ResultTokens;
 			FFileHelper::LoadFileToStringArrayWithPredicate(ResultTokens, *(WorkingDir + "/" + ChuckFile), [](const FString& Line) { return Line.Contains(TEXT("UCHUCK()")); });
+			bool bIsUChuck = ResultTokens.Num() > 0;
 
-			if (ResultTokens.Num() == 0)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Chuck file: %s, does not contain a UCHUCK() definition, skipping."), *ChuckFile);
-				
-			}
-			else {
-				UE_LOG(LogTemp, Log, TEXT("Chuck file: %s, contains a UCHUCK() definition."), *ChuckFile);
-			}
-
+			
 			//we may already have an asset for this chuck file
 			FString ChuckAssetPath = TEXT("/Chunreal/Chunreal/RuntimeChucks/") + ChuckName + TEXT(".") + ChuckName;
 			FName ChuckAssetName = FName(*ChuckAssetPath);
@@ -105,6 +101,7 @@ public:
 			if (ExistingAssetIndex != INDEX_NONE)
 			{
 				ChuckProcessor = Cast<UChuckProcessor>(AssetData[ExistingAssetIndex].GetAsset());
+				AssetData.RemoveAtSwap(ExistingAssetIndex);
 				UE_LOG(LogTemp, Log, TEXT("Found Chuck file: %s, already exists as asset."), *ChuckFile);
 	
 			}
@@ -118,19 +115,22 @@ public:
 				AssetRegistryModule.Get().AssetCreated(ChuckProcessor);
 			}
 
-			//Create transient UChuckProcessor
+		}
 
-			//AssetRegistryModule.Get().AddPath(ChuckFile);
-			
+		//ObjectTools::D
+
+		//delete any remaining assets, with dialog?
+		if (AssetData.Num() > 0)
+		{
+			ObjectTools::DeleteAssets(AssetData, true);
+		}
 		
 
 
 
-			//Register UChuckProcessor
-			//FMetasoundFrontendRegistryContainer::Get()->RegisterNode(ChuckProcessor);
-		}
-
 	}
+
+	
 	
 
 	virtual void OnPostEngineInit()
