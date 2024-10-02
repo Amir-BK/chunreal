@@ -1880,7 +1880,7 @@ void FChunrealSlateEditableTextLayout::HighlightTokenUnderCursor(const UE::Slate
 	FTextSelection OriginalSelection = GetSelection();
 	
 	FTextLocation InitialLocation = TextLayout->GetTextLocationAt(FVector2d(InLocalPosition));
-	FTextSelection WordSelection = TextLayout->GetWordAt(InitialLocation);
+	FTextSelection WordSelection = TextLayout->GetWordAtWithSyntaxAwareness(InitialLocation);
 
 	FTextLocation WordStart = WordSelection.GetBeginning();
 	FTextLocation WordEnd = WordSelection.GetEnd();

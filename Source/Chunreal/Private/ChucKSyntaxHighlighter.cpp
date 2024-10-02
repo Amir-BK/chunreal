@@ -257,7 +257,7 @@ protected:
 					//if current char is "." print something, we'll figure it out later
 					if (CurrentChar == TEXT('.'))
 					{
-						UE_LOG(LogTemp, Warning, TEXT("Current char is a dot"));
+						//UE_LOG(LogTemp, Warning, TEXT("Current char is a dot"));
 						//continue;
 					}
 
@@ -274,7 +274,7 @@ protected:
 							check(SyntaxTokenEnd <= LineRange.EndIndex);
 
 							bHasMatchedSyntax = true;
-							UE_CLOG(bHasMatchedSyntax, LogTemp, Warning, TEXT("Matched Operator: %s"), *Operator);
+							//UE_CLOG(bHasMatchedSyntax, LogTemp, Warning, TEXT("Matched Operator: %s"), *Operator);
 							CurrentOffset = SyntaxTokenEnd;
 							break;
 						}

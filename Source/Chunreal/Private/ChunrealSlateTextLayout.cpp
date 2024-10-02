@@ -10,6 +10,7 @@
 #include "Framework/Text/ISlateLineHighlighter.h"
 #include "Framework/Text/SlateTextRun.h"
 #include "Framework/Text/SlatePasswordRun.h"
+#include "Internationalization/BreakIterator.h"
 #include "Trace/SlateMemoryTags.h"
 
 TSharedRef< FChunrealSlateTextLayout > FChunrealSlateTextLayout::Create(SWidget* InOwner, FTextBlockStyle InDefaultTextStyle)
@@ -286,6 +287,49 @@ const FTextBlockStyle& FChunrealSlateTextLayout::GetDefaultTextStyle() const
 void FChunrealSlateTextLayout::SetIsPassword(const TAttribute<bool>& InIsPassword)
 {
 	bIsPassword = InIsPassword;
+}
+
+FTextSelection FChunrealSlateTextLayout::GetWordAtWithSyntaxAwareness(FTextLocation Location) const
+{
+	const int32 LineIndex = Location.GetLineIndex();
+	const int32 Offset = Location.GetOffset();
+
+	if (!LineModels.IsValidIndex(LineIndex))
+	{
+		return FTextSelection();
+	}
+
+	const FLineModel& LineModel = LineModels[LineIndex];
+
+	//early return if out of bounds
+	if (LineModel.Text->IsEmpty() || Offset >= LineModel.Text->Len())
+	{
+		return FTextSelection();
+	}
+
+	//early return if currently hovered character is a whitespace or a dot
+	if ((*LineModel.Text)[Offset] == ' ' || (*LineModel.Text)[Offset] == '.')
+	{
+		return FTextSelection(FTextLocation(LineIndex, Offset), FTextLocation(LineIndex, Offset));
+	}
+
+
+	int32 CurrentBreak = Offset;
+	int32 PreviousBreak = Offset;
+
+	// Find the next word break, walk forwards to find the end of the word
+	for (CurrentBreak; CurrentBreak < LineModel.Text->Len(); ++CurrentBreak)
+	{
+		if (!IsAlphaOrDigit((*LineModel.Text)[CurrentBreak])) break;
+	}
+
+	// now walk backward
+	for (PreviousBreak; PreviousBreak >= 0; --PreviousBreak)
+	{
+		if (!IsAlphaOrDigit((*LineModel.Text)[PreviousBreak])) break;
+	}
+
+	return FTextSelection(FTextLocation(LineIndex, CurrentBreak), FTextLocation(LineIndex, PreviousBreak));
 }
 
 void FChunrealSlateTextLayout::AggregateChildren()

@@ -77,20 +77,22 @@ class CHUNREAL_API FChucKSyntaxHighlighterMarshaller : public FSyntaxHighlighter
 		//FAppStyle::GetWidgetStyle<FTextBlockStyle>("SyntaxHighlight.HLSL.Normal");
 		FTextBlockStyle NormalTextStyle = FTextBlockStyle();
 		NormalTextStyle.SetColorAndOpacity(FLinearColor::White);
-		NormalTextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 10));
+		NormalTextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 12));
 		NormalTextStyle.SetShadowOffset(FVector2D::ZeroVector);
 		NormalTextStyle.SetShadowColorAndOpacity(FLinearColor::Black);
 		NormalTextStyle.SetHighlightColor(FLinearColor::White);
 
 		FTextBlockStyle OperatorTextStyle = FTextBlockStyle(NormalTextStyle);
 		OperatorTextStyle.SetColorAndOpacity(FLinearColor::Red);
+		//operators are bold
+		OperatorTextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("Bold", 12));
 
 
 		//make styles for the rest of the syntax
 		FTextBlockStyle KeywordTextStyle = FTextBlockStyle(NormalTextStyle);
 		KeywordTextStyle.SetColorAndOpacity(FLinearColor(FColor(0xff006ab4)));
 		//make keyword style bold
-		KeywordTextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("Bold", 10));
+		KeywordTextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("Bold", 12));
 
 		FTextBlockStyle StringTextStyle = FTextBlockStyle(NormalTextStyle);
 		StringTextStyle.SetColorAndOpacity(FLinearColor(FColor(0xffdfd706)));

@@ -32,6 +32,8 @@ public:
 
 	CHUNREAL_API void SetIsPassword(const TAttribute<bool>& InIsPassword);
 
+	CHUNREAL_API FTextSelection GetWordAtWithSyntaxAwareness(FTextLocation Location) const;
+
 protected:
 
 	CHUNREAL_API FChunrealSlateTextLayout(SWidget* InOwner, FTextBlockStyle InDefaultTextStyle);
@@ -54,4 +56,19 @@ private:
 	TAttribute<bool> bIsPassword;
 
 	friend class FChunrealSlateTextLayoutFactory;
+
+	static FORCEINLINE bool IsAlpha(TCHAR Char)
+	{
+		return (Char >= 'a' && Char <= 'z') || (Char >= 'A' && Char <= 'Z');
+	}
+
+	static FORCEINLINE bool IsDigit(TCHAR Char)
+	{
+		return Char >= '0' && Char <= '9';
+	}
+
+	static FORCEINLINE bool IsAlphaOrDigit(TCHAR Char)
+	{
+		return IsAlpha(Char) || IsDigit(Char);
+	}
 };
