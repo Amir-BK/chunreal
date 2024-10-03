@@ -1854,7 +1854,7 @@ void FChunrealSlateEditableTextLayout::SelectWordAt(const FGeometry& MyGeometry,
 void FChunrealSlateEditableTextLayout::SelectWordAt(const UE::Slate::FDeprecateVector2DParameter& InLocalPosition)
 {
 	FTextLocation InitialLocation = TextLayout->GetTextLocationAt(FVector2d(InLocalPosition));
-	FTextSelection WordSelection = TextLayout->GetWordAt(InitialLocation);
+	FTextSelection WordSelection = TextLayout->GetWordAtWithSyntaxAwareness(InitialLocation);
 
 	FTextLocation WordStart = WordSelection.GetBeginning();
 	FTextLocation WordEnd = WordSelection.GetEnd();
@@ -1881,6 +1881,27 @@ void FChunrealSlateEditableTextLayout::HighlightTokenUnderCursor(const UE::Slate
 	
 	FTextLocation InitialLocation = TextLayout->GetTextLocationAt(FVector2d(InLocalPosition));
 	FTextSelection WordSelection = TextLayout->GetWordAtWithSyntaxAwareness(InitialLocation);
+
+	auto Run = GetRunUnderCursor();
+	//print
+	if (Run.IsValid())
+	{
+		//get run range
+		//Run->
+		FTextLocation RunStart(InitialLocation.GetLineIndex(), Run->GetTextRange().BeginIndex);
+		FTextLocation RunEnd(InitialLocation.GetLineIndex(), Run->GetTextRange().EndIndex);
+		//make selection
+		auto RunSelection = FTextSelection(RunStart, RunEnd);
+		//get text and print it
+		FString RunOutToken;
+		TextLayout->GetSelectionAsText(RunOutToken, RunSelection);
+
+		//perhaps with some modificiations to the syntax highlighter we'll be able to get the real syntax relevant token as a run...
+
+		//UE_LOG(LogTemp, Warning, TEXT("Run: %s"), *RunOutToken);
+
+	}
+
 
 	FTextLocation WordStart = WordSelection.GetBeginning();
 	FTextLocation WordEnd = WordSelection.GetEnd();

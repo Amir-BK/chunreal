@@ -61,12 +61,27 @@ FReply SBkCodeEditableText::OnKeyChar(const FGeometry& MyGeometry, const FCharac
 
 FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
 {
+	/*
+	* 
+	// take 'delete' key as handled
+	if (InKeyEvent.GetKey() == EKeys::Delete)
+	{
+		if (!IsTextReadOnly())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Delete key pressed"));
+			DeleteSelectedText();
+			//DeleteSelectedText();
+			return FReply::Handled();
+		}
+	}
+	
 	// If the key event is a tab key, we want to handle it ourselves to steal it from the editor
 
 	if (InKeyEvent.GetKey() == EKeys::Tab)
 	{
 		if (!IsTextReadOnly())
 		{
+			
 			return FReply::Handled();
 		}
 		
@@ -120,14 +135,15 @@ FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEve
 	if (InKeyEvent.IsControlDown())
 	{
 		if (InKeyEvent.GetKey() == EKeys::C || InKeyEvent.GetKey() == EKeys::V || InKeyEvent.GetKey() == EKeys::X ||
-			InKeyEvent.GetKey() == EKeys::Z || InKeyEvent.GetKey() == EKeys::Y || /* select all*/ InKeyEvent.GetKey() == EKeys::A)
+			InKeyEvent.GetKey() == EKeys::Z || InKeyEvent.GetKey() == EKeys::Y ||  InKeyEvent.GetKey() == EKeys::A)
 		{
 			return SChunrealMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
 		}
 	}
 
+	*/
 	
-	return FReply::Unhandled();
+	return SChunrealMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
 	//return FReply::Unhandled();
 }
 
