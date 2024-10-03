@@ -10,7 +10,8 @@ adc => JCRev revR => LPF LpfR => Gain gR => dac.right;
 //keep at 1 if using as parallel reverb and control reverb amount via mix, if used as insert this is the wet/dry control.
 0.999  => float mixGain;
 
-0.5 => float dacGain;
+//JCRev output needs to be low otherwise it causes saturation or something? idgi
+0.3 => float dacGain;
 
 dacGain => gL.gain;
 dacGain => gR.gain;

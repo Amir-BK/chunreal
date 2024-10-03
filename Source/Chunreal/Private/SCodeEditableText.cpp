@@ -75,17 +75,7 @@ FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEve
 		}
 	}
 	
-	// If the key event is a tab key, we want to handle it ourselves to steal it from the editor
 
-	if (InKeyEvent.GetKey() == EKeys::Tab)
-	{
-		if (!IsTextReadOnly())
-		{
-			
-			return FReply::Handled();
-		}
-		
-	}
 
 	//if key is enter key, we want to handle it ourselves to steal it from the editor
 	if (InKeyEvent.GetKey() == EKeys::Enter)
@@ -142,6 +132,17 @@ FReply SBkCodeEditableText::OnKeyDown(const FGeometry& MyGeometry, const FKeyEve
 	}
 
 	*/
+	// If the key event is a tab key, we want to handle it ourselves to steal it from the layout class, for some reason the layout class is not handling it correctly
+
+	if (InKeyEvent.GetKey() == EKeys::Tab)
+	{
+		if (!IsTextReadOnly())
+		{
+
+			return FReply::Handled();
+		}
+
+	}
 	
 	return SChunrealMultiLineEditableText::OnKeyDown(MyGeometry, InKeyEvent);
 	//return FReply::Unhandled();

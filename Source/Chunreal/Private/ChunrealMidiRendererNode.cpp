@@ -334,8 +334,8 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				
 				CurrentChuckGuid = ChuckProcessor->ChuckGuid;
 		
-				DeinterleavedBuffer.resize(2 * BlockSizeFrames);
-				DecodedAudioDataBuffer.resize(2 * BlockSizeFrames);
+				//DeinterleavedBuffer.resize(2 * BlockSizeFrames);
+				//DecodedAudioDataBuffer.resize(2 * BlockSizeFrames);
 
 				// if buffer is initialized, delete it and set to false
 				if (bufferInitialized)
