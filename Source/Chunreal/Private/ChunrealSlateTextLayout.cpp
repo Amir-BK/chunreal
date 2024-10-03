@@ -30,6 +30,30 @@ FChunrealSlateTextLayout::FChunrealSlateTextLayout(SWidget* InOwner, FTextBlockS
 
 }
 
+int32 FChunrealSlateTextLayout::OnPaintHighlightedToken(const FPaintArgs& Args, const FTextLayout::FLineView& LineView, const TArray<FLineViewHighlight>& Highlights, const FTextBlockStyle& InDefaultTextStyle, const FGeometry& AllottedGeometry, const FSlateRect& InClippingRect, FSlateWindowElementList& OutDrawElements, const int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
+{
+	int32 CurrentLayerId = LayerId;
+	FTextBlockStyle HighlightedTextStyle = InDefaultTextStyle;
+	HighlightedTextStyle.SetColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f));
+
+	for (const FLineViewHighlight& Highlight : Highlights)
+	{
+	/*	FSlateDrawElement::MakeText(
+			OutDrawElements,
+			CurrentLayerId,
+			AllottedGeometry.ToPaintGeometry(TransformVector(1.0f, FVector2D(Highlight.Width, LineView.Size.Y)), FSlateLayoutTransform(TransformPoint(1.0f, FVector2D(Highlight.OffsetX, LineView.Offset.Y)))),
+			HighlightedTextStyle.Font,
+			Highlight.Width,
+			TEXT("Poop"),
+			InClippingRect,
+			ESlateDrawEffect::None,
+			HighlightedTextStyle.ColorAndOpacity
+		);*/
+	}
+
+	return CurrentLayerId;
+}
+
 FChildren* FChunrealSlateTextLayout::GetChildren()
 {
 	return &Children;
@@ -199,6 +223,8 @@ int32 FChunrealSlateTextLayout::OnPaint( const FPaintArgs& Args, const FGeometry
 			LineOverflowPolicy = ETextOverflowPolicy::Clip;
 		}
 
+
+
 		// Render every block for this line
 		for (int32 BlockIndex = 0; BlockIndex < LineView.Blocks.Num(); ++BlockIndex)
 		{
@@ -241,12 +267,54 @@ int32 FChunrealSlateTextLayout::OnPaint( const FPaintArgs& Args, const FGeometry
 				HighestRunLayerId = Run->OnPaint( Args, TextArgs, AllottedGeometry, MyCullingRect, OutDrawElements, TextLayer, InWidgetStyle, bParentEnabled );
 			}
 
+			//is selection set and in this block?
+			bool bIsSelectionInBlock = false;
+			if (HoveredSelectionToken.IsSet())
+			{
+				const FTextLocation SelectionStart = HoveredSelectionToken->GetBeginning();
+				const FTextLocation SelectionEnd = HoveredSelectionToken->GetEnd();
+
+				//let's try something else, draw a line on the word
+				const auto& StartPos = GetLocationAt(SelectionStart, false);
+				const auto& EndPos = GetLocationAt(SelectionEnd, false);
+
+				FSlateDrawElement::MakeLines(
+					OutDrawElements,
+					HighestRunLayerId,
+					AllottedGeometry.ToPaintGeometry(),
+					TArray<FVector2D>{StartPos, EndPos},
+					ESlateDrawEffect::None,
+					FLinearColor(1.0f, 0.0f, 0.0f, 1.0f),
+					false
+				);
+			
+
+			}
+
 			HighestBlockLayerId = FMath::Max( HighestBlockLayerId, HighestRunLayerId );
 		}
 
 		// Render any overlays for this line
 		const int32 HighestOverlayLayerId = OnPaintHighlights(Args, LineView, LineView.OverlayHighlights, DefaultTextStyle, AllottedGeometry, MyCullingRect, OutDrawElements, HighestBlockLayerId, InWidgetStyle, bParentEnabled);
 		HighestLayerId = FMath::Max(HighestLayerId, HighestOverlayLayerId);
+
+		if (HoveredSelectionToken.IsSet())
+		{
+			const FTextLayout::FLineView& HoveredLineView = LineViews[HoveredSelectionToken->GetBeginning().GetLineIndex()];
+			const auto SelectionStart = HoveredSelectionToken->GetBeginning().GetOffset();
+			const auto SelectionEnd = HoveredSelectionToken->GetEnd().GetOffset();
+			FString SelectedText;
+			//GetSelectionAsText(SelectedText, *HoveredSelectionToken);
+
+		
+
+			
+			
+
+
+			
+		}
+
 	}
 
 	return HighestLayerId;
@@ -289,7 +357,7 @@ void FChunrealSlateTextLayout::SetIsPassword(const TAttribute<bool>& InIsPasswor
 	bIsPassword = InIsPassword;
 }
 
-FTextSelection FChunrealSlateTextLayout::GetWordAtWithSyntaxAwareness(FTextLocation Location) const
+FTextSelection FChunrealSlateTextLayout::GetWordAtWithSyntaxAwareness(FTextLocation Location)
 {
 	const int32 LineIndex = Location.GetLineIndex();
 	const int32 Offset = Location.GetOffset();
@@ -337,12 +405,14 @@ FTextSelection FChunrealSlateTextLayout::GetWordAtWithSyntaxAwareness(FTextLocat
 
 	if (LineModel.Text->IsEmpty() || Offset >= LineModel.Text.Get().Len() -1)
 	{
+		HoveredSelectionToken.Reset();
 		return FTextSelection();
 	}
 
 	//early return if currently hovered character is a whitespace or a dot
 	if ((*LineModel.Text)[Offset] == ' ' || (*LineModel.Text)[Offset] == '.')
 	{
+		HoveredSelectionToken.Reset();
 		return FTextSelection();
 	}
 
@@ -362,11 +432,13 @@ FTextSelection FChunrealSlateTextLayout::GetWordAtWithSyntaxAwareness(FTextLocat
 		if (!IsAlphaOrDigit((*LineModel.Text)[TokenEnd - 1])) break;
 	}
 
-	auto HoveredTokenNew = FTextSelection(FTextLocation(LineIndex, TokenStart), FTextLocation(LineIndex, TokenEnd));
+	HoveredToken = FTextSelection(FTextLocation(LineIndex, TokenStart), FTextLocation(LineIndex, TokenEnd));
 	//HoveredToken(FTextSelection(FTextLocation(LineIndex, CurrentBreak), FTextLocation(LineIndex, PreviousBreak));
 	//HoveredToken = &HoveredTokenNew;
 
-	return HoveredTokenNew;
+	//HoveredToken = HoveredTokenNew;
+	HoveredSelectionToken = HoveredToken;
+	return HoveredToken;
 }
 
 void FChunrealSlateTextLayout::AggregateChildren()

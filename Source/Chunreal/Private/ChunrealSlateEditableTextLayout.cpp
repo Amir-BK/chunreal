@@ -3619,6 +3619,7 @@ int32 FChunrealSlateEditableTextLayout::OnPaint(const FPaintArgs& Args, const FG
 	LayerId = TextLayout->OnPaint(Args, AllottedGeometry, MyCullingRect, OutDrawElements, LayerId, InWidgetStyle, bParentEnabled);
 
 	//paint only highlighted token in PINK, if anything highlighted
+	/* 
 	if (HighlightedToken.GetBeginning() != HighlightedToken.GetEnd())
 	{
 
@@ -3633,6 +3634,7 @@ int32 FChunrealSlateEditableTextLayout::OnPaint(const FPaintArgs& Args, const FG
 		);
 
 	}
+	*/
 
 
 

@@ -32,11 +32,14 @@ public:
 
 	CHUNREAL_API void SetIsPassword(const TAttribute<bool>& InIsPassword);
 
-	CHUNREAL_API FTextSelection GetWordAtWithSyntaxAwareness(FTextLocation Location) const;
+	CHUNREAL_API FTextSelection GetWordAtWithSyntaxAwareness(FTextLocation Location);
 
 protected:
 
 	CHUNREAL_API FChunrealSlateTextLayout(SWidget* InOwner, FTextBlockStyle InDefaultTextStyle);
+
+	CHUNREAL_API virtual int32 OnPaintHighlightedToken(const FPaintArgs& Args, const FTextLayout::FLineView& LineView, const TArray<FLineViewHighlight>& Highlights, const FTextBlockStyle& DefaultTextStyle, const FGeometry& AllottedGeometry, const FSlateRect& ClippingRect, FSlateWindowElementList& OutDrawElements, const int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const;
+
 
 	CHUNREAL_API virtual int32 OnPaintHighlights(const FPaintArgs& Args, const FTextLayout::FLineView& LineView, const TArray<FLineViewHighlight>& Highlights, const FTextBlockStyle& DefaultTextStyle, const FGeometry& AllottedGeometry, const FSlateRect& ClippingRect, FSlateWindowElementList& OutDrawElements, const int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const;
 
@@ -48,7 +51,8 @@ protected:
 	/** Default style used by the TextLayout */
 	FTextBlockStyle DefaultTextStyle;
 
-	TSharedPtr<FTextSelection> HoveredToken;
+	FTextSelection HoveredToken;
+	TOptional<FTextSelection> HoveredSelectionToken;
 
 private:
 
