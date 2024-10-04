@@ -4,7 +4,11 @@ https://discord.gg/EWFKWTz3
 Status:
 1. Fixed file loading on windows (doesn't work on main repo).
 2. Reading/writing global variables via ChuckID is not possible when using the 'new style' processor
-3. work in progress - real time chuck code editor, monitors the chuck files in the WorkingDirectory and automatically recompiles the chuck vm on changes
+3. work in progress - real time chuck code editor, monitors the chuck files in the WorkingDirectory and automatically recompiles the chuck vm on changes, with a nice in-game widget
+
+https://github.com/user-attachments/assets/88edb1d8-1f97-4d69-8c2e-0e19875bf209
+
+
 4. ChucK Processors can now be applied as Source and Submix effect in preset chains.  
 
 https://github.com/user-attachments/assets/accddb23-fffd-4d21-80f7-6d6ad3640467
