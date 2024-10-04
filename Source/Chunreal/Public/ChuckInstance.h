@@ -13,7 +13,8 @@
 
 //class FChuckInstanceProxy;
 /**
- * 
+ * A chuck processor really represents the CODE for a chuck, not the actual running instance of a chuck,
+ * So it's more of a template and I might rename it to reflect this
  */
 UCLASS(BlueprintType)
 class CHUNREAL_API UChuckProcessor : public UObject, public IAudioProxyDataFactory
@@ -63,22 +64,33 @@ private:
 	
 };
 
-class CHUNREAL_API FChuckInstanceProxy : public Audio::TProxyData<FChuckInstanceProxy>
+class CHUNREAL_API FChuckCodeProxy : public Audio::TProxyData<FChuckCodeProxy>
 {
 public:
-	IMPL_AUDIOPROXY_CLASS(FChuckInstanceProxy);
+	IMPL_AUDIOPROXY_CLASS(FChuckCodeProxy);
 
-	explicit FChuckInstanceProxy(UChuckProcessor* InChuckProcessor)
+	explicit FChuckCodeProxy(UChuckProcessor* InChuckProcessor)
 		: 
 		ChuckProcessor(InChuckProcessor)
 	{
 	}
 
-	FChuckInstanceProxy(const FChuckInstanceProxy& Other) = default;
+	FChuckCodeProxy(const FChuckCodeProxy& Other) = default;
 
 	UChuckProcessor* ChuckProcessor = nullptr;
 	//FString ChuckCode;
 
+
+};
+
+//this should represent a live instance of a chuck vm, it is not meant to be shared by sound generators as this will corrupt the buffers
+//Differentiating between the two kind of objects lets us use Chucks as templates while also having access to their parameters, from metasound as well as BP and code.
+UCLASS(BlueprintType)
+class CHUNREAL_API UChuckInstantiation : public UChuckProcessor
+{
+	GENERATED_BODY()
+
+	ChucK* ChuckInstance = nullptr;
 
 };
 
@@ -92,17 +104,17 @@ namespace Metasound
 		FChuckInstance& operator=(const FChuckInstance& Other) = default;
 		FChuckInstance(const TSharedPtr<Audio::IProxyData>& InInitData)
 		{
-			ChuckProxy = StaticCastSharedPtr<FChuckInstanceProxy>(InInitData);
+			ChuckProxy = StaticCastSharedPtr<FChuckCodeProxy>(InInitData);
 		}
 
 		bool IsInitialized() const { return ChuckProxy.IsValid(); }
 
 		//void RegenerateInputs() const { ChuckProxy->RegenerateInputs(); }
 
-		const FChuckInstanceProxy* GetProxy() const { return ChuckProxy.Get(); }
+		const FChuckCodeProxy* GetProxy() const { return ChuckProxy.Get(); }
 
 	private:
-		TSharedPtr<FChuckInstanceProxy, ESPMode::ThreadSafe> ChuckProxy;
+		TSharedPtr<FChuckCodeProxy, ESPMode::ThreadSafe> ChuckProxy;
 	};
 
 	DECLARE_METASOUND_DATA_REFERENCE_TYPES(FChuckInstance, CHUNREAL_API, FChuckInstanceTypeInfo, FChuckInstanceReadRef, FChuckInstanceWriteRef)

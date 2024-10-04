@@ -12,7 +12,7 @@ global float noteFreq;
 //.05 => r.mix;
 
 
-Rhodey voc => JCRev r => Echo a => Echo b => Echo c => dac;
+			Rhodey voc => JCRev r => Echo a => Echo b => Echo c => dac;
 
 220.0 => voc.freq;
 0.8 => voc.gain;

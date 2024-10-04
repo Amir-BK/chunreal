@@ -41,8 +41,10 @@ inline void FSourceEffectChuck::OnPresetChanged()
 			bFirstFrameForChuck = true;
 			//we should be good to go now, we'll deal with the parameters later, in theory we shouldn't recompile the chuck if the parameters change, only if the Guid does.
 		}
-		if (bFirstFrameForChuck) return;
-		
+		//if (bFirstFrameForChuck) return;
+		bool bHasParams = Settings.Params.Num() > 0;
+		if (!bHasParams) return;
+
 		for (const auto& Param : Settings.Params)
 		{
 
@@ -56,7 +58,7 @@ inline void FSourceEffectChuck::OnPresetChanged()
 				ChuckRef->globals()->setGlobalFloat(TCHAR_TO_ANSI(*Param.ParamName.ToString()), Param.FloatParam);
 				break;
 			case EAudioParameterType::String:
-				ChuckRef->globals()->setGlobalString(TCHAR_TO_ANSI(*Param.ParamName.ToString()), TCHAR_TO_UTF8(*Param.StringParam));
+				ChuckRef->globals()->setGlobalString(TCHAR_TO_ANSI(*Param.ParamName.ToString()), TCHAR_TO_ANSI(*Param.StringParam));
 				break;
 			case EAudioParameterType::Boolean:
 				ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*Param.ParamName.ToString()), Param.BoolParam);
@@ -67,7 +69,7 @@ inline void FSourceEffectChuck::OnPresetChanged()
 
 		}
 
-		ChuckRef->globals()->broadcastGlobalEvent("paramUpdate"); //a chance to update the parameters that need to be explicitly updated
+		ChuckRef->globals()->broadcastGlobalEvent(TCHAR_TO_ANSI(TEXT("paramUpdate"))); //a chance to update the parameters that need to be explicitly updated
 
 		
 	}

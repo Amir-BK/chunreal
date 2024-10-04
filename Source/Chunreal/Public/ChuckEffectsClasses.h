@@ -47,8 +47,15 @@ class CHUNREAL_API FSubmixChuckEffect : public FSoundEffectSubmix
 		if (bFirstFrameForChuck)
 		{
 			bFirstFrameForChuck = false;
+			//OnPresetChanged();
+		}
+
+		//if guid has changed, recompile chuck by sending on preset changed
+
+		if (ChuckProcessor->ChuckGuid != CurrentChuckGuid) {
 			OnPresetChanged();
 		}
+
 
 		FChunrealModule::RunChuck(ChuckRef, InData.AudioBuffer->GetData(), OutData.AudioBuffer->GetData(), InData.NumFrames);
 	};
@@ -141,8 +148,13 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 		if (bFirstFrameForChuck)
 		{
 			bFirstFrameForChuck = false;
+			//OnPresetChanged();
+		}
+
+		if (ChuckProcessor->ChuckGuid != CurrentChuckGuid) {
 			OnPresetChanged();
 		}
+
 		//Process samples by ChucK
 		FChunrealModule::RunChuck(ChuckRef, InData.InputSourceEffectBufferPtr, OutAudioBufferData, InData.NumSamples / NumChannels);
 	};

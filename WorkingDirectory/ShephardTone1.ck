@@ -19,7 +19,7 @@
 1::ms => dur T;
 
 // starting pitches (in MIDI note numbers, octaves apart)
-[ 12.0, 24, 36, 48, 60, 72, 84, 96, 108 ] @=> float pitches[];
+[ 12.0, 24, 36, 47, 60, 72, 85, 96, 108 , 39, 45, 51, 57 ] @=> float pitches[];
 // number of tones
 pitches.size() => int N;
 // bank of tones
@@ -51,5 +51,5 @@ while( true )
     // advance time
     T => now;
 }
-
+//
 fun void UCHUCK() {}; // another alternative to marking as an asset

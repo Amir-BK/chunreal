@@ -6,7 +6,7 @@ adc.right => Gain gR => dac.left;
 gL => Gain feedbackL => DelayL delayL => gL;
 gR => Gain feedbackR => Delay delayR => gR;
 
-0.1 => global float DelayTime;
+global float DelayTime;
 
 global Event paramUpdate;
 Event Test;
@@ -23,23 +23,12 @@ mixGain => delayL.gain;
 mixGain => delayR.gain;
 
 // infinite time loop
-<<< "Initializing Chuck" >>>;
-fun void SetParams ( Event ee)
-{
-	ee => now;
-	DelayTime::second => delayL.max => delayL.delay;
-	DelayTime::second => delayR.max => delayR.delay;
-	<<< "Params updated from event" , DelayTime >>>;
-	
-
-}
-
-spork ~ SetParams(paramUpdate);
-paramUpdate.broadcast();
 
 
 while( true ) 
 	{
-	1::samp => now;
-	paramUpdate.broadcast();
-	}
+	paramUpdate => now;
+	DelayTime::second => delayL.max => delayL.delay;
+	DelayTime::second => delayR.max => delayR.delay;
+
+}		
