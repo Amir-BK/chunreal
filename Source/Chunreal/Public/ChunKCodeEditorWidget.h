@@ -24,7 +24,7 @@ class CHUNREAL_API UChuckCodeEditorWidget : public UUserWidget
 	virtual TSharedRef<SWidget> RebuildWidget() override
 	{
 		SAssignNew(CodeEditor, SBkCodeEditableText)
-			.Text(FText::FromString(TEXT("Hello World")))
+			.Text(FText::FromString(*InitialCode))
 			
 			.Marshaller(FChucKSyntaxHighlighterMarshaller::Create());
 
@@ -73,6 +73,9 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, Category = "ChucK", meta = (BindWidget))
 	UButton* CompileButton;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ChucK", meta = (ExposeOnSpawn = true, MultiLine = true))
+	FString InitialCode = TEXT("<<<Hello World>>>;");
 
 
 };
