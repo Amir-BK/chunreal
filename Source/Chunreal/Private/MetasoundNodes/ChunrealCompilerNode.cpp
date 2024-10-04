@@ -34,11 +34,11 @@
 //#include "SfizzSynthNode.h"
 //#include "MidiTrackIsolator.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogChucKMidiNode, VeryVerbose, All);
+DEFINE_LOG_CATEGORY_STATIC(LogChuckCompilerNode, VeryVerbose, All);
 
-#define LOCTEXT_NAMESPACE "ChunrealMetasounds_ChuckMidiRenderer"
+#define LOCTEXT_NAMESPACE "ChunrealMetasounds_ChuckCompiler"
 
-namespace ChunrealMetasounds::ChuckMidiRenderer
+namespace ChunrealMetasounds::ChuckCompiler
 {
 	using namespace Metasound;
 	using namespace HarmonixMetasound;
@@ -48,7 +48,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		static FNodeClassName ClassName
 		{
 			"Chunreal",
-			"ChuckMidiPlayerNode",
+			"ChuckCompilerNode",
 			""
 		};
 		return ClassName;
@@ -62,7 +62,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 	namespace Inputs
 	{
 		DEFINE_INPUT_METASOUND_PARAM(Compile, "Compile", "Compiles the input ChucK code with the VM")
-		DEFINE_INPUT_METASOUND_PARAM(ChuckInstance, "Chuck Instance", "Chuck Instance")
+		DEFINE_INPUT_METASOUND_PARAM(ChuckInstance, "Chuck Code Asset", "Reference to a chuck code asset containing chuck code ")
 		//audio inputs
 		DEFINE_INPUT_METASOUND_PARAM(AudioInLeft, "Audio In Left", "optional audio input into ChucK vm");
 		DEFINE_INPUT_METASOUND_PARAM(AudioInRight, "Audio In Right", "optional audio input into ChucK vm");
@@ -79,7 +79,9 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 	{
 		DEFINE_OUTPUT_METASOUND_PARAM(AudioOutLeft, "Audio Out Left", "Left output of SFizz Synth");
 		DEFINE_OUTPUT_METASOUND_PARAM(AudioOutRight, "Audio Out Right", "Right output of Sfizz Synth");
+		DEFINE_OUTPUT_METASOUND_PARAM(ChuckInstanceOut, "Chuck Instance", "Chuck Instance");
 	}
+
 
 	class ChunrealMetasoundMidiOperator final : public TExecutableOperator<ChunrealMetasoundMidiOperator>
 	{
@@ -92,7 +94,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 					Info.ClassName = GetClassName();
 					Info.MajorVersion = 1;
 					Info.MinorVersion = 0;
-					Info.DisplayName = INVTEXT("Chuck Midi Renderer Node");
+					Info.DisplayName = INVTEXT("Chuck Midi Compiler");
 					Info.Description = INVTEXT("This nodes receives a midi stream and passes it to the chuck vm instance");
 					Info.Author = PluginAuthor;
 					Info.PromptIfMissing = PluginNodeMissingPrompt;
@@ -111,7 +113,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			static const FVertexInterface Interface(
 				FInputVertexInterface(
 
-					TInputDataVertex<FChuckInstance>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::ChuckInstance)),
+					TInputDataVertex<FChuckProcessor>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::ChuckInstance)),
 					//audio inputs
 					TInputDataVertex<FAudioBuffer>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::AudioInLeft)),
 					TInputDataVertex<FAudioBuffer>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::AudioInRight)),
@@ -123,7 +125,8 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				),
 				FOutputVertexInterface(
 					TOutputDataVertex<FAudioBuffer>(METASOUND_GET_PARAM_NAME_AND_METADATA(Outputs::AudioOutLeft)),
-					TOutputDataVertex<FAudioBuffer>(METASOUND_GET_PARAM_NAME_AND_METADATA(Outputs::AudioOutRight))
+					TOutputDataVertex<FAudioBuffer>(METASOUND_GET_PARAM_NAME_AND_METADATA(Outputs::AudioOutRight)),
+					TOutputDataVertex<FChuckInstance>(METASOUND_GET_PARAM_NAME_AND_METADATA(Outputs::ChuckInstanceOut))
 				)
 			);
 
@@ -133,7 +136,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		struct FInputs
 		{
 	
-			FChuckInstanceReadRef ChuckInstance;
+			FChuckProcessorReadRef ChuckInstance;
 			FAudioBufferReadRef AudioInLeft;
 			FAudioBufferReadRef AudioInRight;
 			FMidiStreamReadRef MidiStream;
@@ -142,16 +145,22 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 		};
 
+		struct FOutputs
+		{
+			FChuckInstanceWriteRef ChuckInstanceOut;
+		};
+
 
 		static TUniquePtr<IOperator> CreateOperator(const FBuildOperatorParams& InParams, FBuildResults& OutResults)
 		{
 			const FInputVertexInterfaceData& InputData = InParams.InputData;
+			//const FOutputVertexInterfaceData& OutputData = InParams.;
 
 			FInputs Inputs
 			{
 				//compile trigger
 
-				InputData.GetOrCreateDefaultDataReadReference<FChuckInstance>(Inputs::ChuckInstanceName, InParams.OperatorSettings),
+				InputData.GetOrCreateDefaultDataReadReference<FChuckProcessor>(Inputs::ChuckInstanceName, InParams.OperatorSettings),
 				//audio inputs
 				InputData.GetOrConstructDataReadReference<FAudioBuffer>(Inputs::AudioInLeftName, InParams.OperatorSettings),
 				InputData.GetOrConstructDataReadReference<FAudioBuffer>(Inputs::AudioInRightName, InParams.OperatorSettings),
@@ -162,21 +171,29 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 			};
 
+			FOutputs Outputs
+			{
+				InputData.GetOrConstructDataWriteReference<FChuckInstance>(Outputs::ChuckInstanceOutName)
+			};
+
+
+
 			// outputs
 			FOutputVertexInterface OutputInterface;
 
 
-			return MakeUnique<ChunrealMetasoundMidiOperator>(InParams, MoveTemp(Inputs));
+			return MakeUnique<ChunrealMetasoundMidiOperator>(InParams, MoveTemp(Inputs), MoveTemp(Outputs));
 		}
 
-		ChunrealMetasoundMidiOperator(const FBuildOperatorParams& InParams, FInputs&& InInputs)
+		ChunrealMetasoundMidiOperator(const FBuildOperatorParams& InParams, FInputs&& InInputs, FOutputs&& InOutputs)
 			: Inputs(MoveTemp(InInputs))
+			, Outputs(MoveTemp(InOutputs))
 			, SampleRate(InParams.OperatorSettings.GetSampleRate())
 			, AudioOutLeft(FAudioBufferWriteRef::CreateNew(InParams.OperatorSettings))
 			, AudioOutRight(FAudioBufferWriteRef::CreateNew(InParams.OperatorSettings))
 		{
 			//Reset(InParams);
-			//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Constructor"));
+			//UE_LOG(LogChuckCompilerNode, VeryVerbose, TEXT("Chuck Midi Synth Node Constructor"));
 
 			//theChuck = new ChucK();
 			//theChuck->setLogLevel(5);
@@ -235,7 +252,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		//destructor
 		virtual ~ChunrealMetasoundMidiOperator()
 		{
-			UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Destructor"));
+			UE_LOG(LogChuckCompilerNode, VeryVerbose, TEXT("Chuck Midi Synth Node Destructor"));
 
 			//Remove ChucK reference with ID
 			//if (!((FString)(*ChuckID)).IsEmpty())
@@ -271,7 +288,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				break;
 			case GNoteOn:
 				//FChunrealModule::SetChuckGlobalFloat(**Inputs.ID, "freq", (float)InData1);
-				//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Note On: %d"), InData1);
+				//UE_LOG(LogChuckCompilerNode, VeryVerbose, TEXT("Note On: %d"), InData1);
 		
 				//by adressing the ChucK pointer directly we may avoid all the ID related collision
 				theChuck->globals()->setGlobalFloat("noteFreq", (float)InData1);
@@ -290,7 +307,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			case GControl:
 				break;
 			case GPitch:
-				//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Pitch Bend: %d"), InData1);
+				//UE_LOG(LogChuckCompilerNode, VeryVerbose, TEXT("Pitch Bend: %d"), InData1);
 				
 				//PitchBendRamper.SetTarget(FMidiMsg::GetPitchBendFromData(InData1, InData2));
 				break;
@@ -311,7 +328,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			const int32 numSamples = Inputs.AudioInLeft->Num();
 
 			//check that we received a valid chuck through the input
-			const FChuckInstance& ChuckInstance = *Inputs.ChuckInstance;
+			const FChuckProcessor& ChuckInstance = *Inputs.ChuckInstance;
 			if (!ChuckInstance.IsInitialized())
 			{
 				ChuckProcessor = nullptr;
@@ -357,7 +374,22 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				}
 
 				ChuckProcessor->CompileChuckAsset(theChuck);
+				// Define the callback function
+				auto MyCallbackFunction = [](const std::vector<Chuck_Globals_TypeValue>& list, void* data) {
+					// Process the list of global variables
+					UE_LOG(LogTemp, Log, TEXT("Processing list of global variables"));
+					for (const auto& item : list) {
+						// Example: Print the name of each global variable
+						UE_LOG(LogTemp, Log, TEXT("Global Variable: %s"), *FString(item.name.c_str()));
+					}
+					};
 
+				// Call the getAllGlobalVariables method
+				void* data = new long;
+
+				theChuck->globals()->getAllGlobalVariables(MyCallbackFunction, data);
+
+				delete static_cast<int*>(data);
 
 				//theChuck->probeChugins();
 
@@ -482,7 +514,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		}
 	private:
 		FInputs Inputs;
-	//	FOutputs Outputs;
+		FOutputs Outputs;
 
 
 		struct FPendingNoteAction

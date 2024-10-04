@@ -16,11 +16,13 @@ static const FName CodeEditorTabName(TEXT("ChucKEditor"));
 
 void FChunrealEditor::StartupModule()
 {
-	ChuckInstanceActionsSharedPtr = MakeShared<FChuckInstanceAssetActions>();
+	ChuckInstanceActionsSharedPtr = MakeShared<FChuckProcessorAssetActions>();
+	ChuckInstantiationActionsSharedPtr = MakeShared<FChuckInstantiationAssetActions>();
 	FAssetToolsModule::GetModule().Get().RegisterAssetTypeActions(ChuckInstanceActionsSharedPtr.ToSharedRef());
+	FAssetToolsModule::GetModule().Get().RegisterAssetTypeActions(ChuckInstantiationActionsSharedPtr.ToSharedRef());
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	PropertyModule.RegisterCustomClassLayout("ChuckProcessor", FOnGetDetailCustomizationInstance::CreateStatic(&FChuckInstanceDetails::MakeInstance));
+	PropertyModule.RegisterCustomClassLayout("ChuckProcessor", FOnGetDetailCustomizationInstance::CreateStatic(&FChuckProcessorDetails::MakeInstance));
 
 	//code editor - 
 	FCodeEditorStyle::Initialize();
@@ -40,6 +42,7 @@ void FChunrealEditor::ShutdownModule()
 {
 	if (!FModuleManager::Get().IsModuleLoaded("AssetTools")) return;
 	FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(ChuckInstanceActionsSharedPtr.ToSharedRef());
+	FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(ChuckInstantiationActionsSharedPtr.ToSharedRef());
 
 	//code editor -
 			// Unregister the tab spawner

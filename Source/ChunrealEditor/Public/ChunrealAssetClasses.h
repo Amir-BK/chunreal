@@ -22,7 +22,7 @@
 #include "ScopedTransaction.h"
 #include "ChunrealAssetClasses.generated.h"
 
-class FChuckInstanceAssetActions : public FAssetTypeActions_Base
+class FChuckProcessorAssetActions : public FAssetTypeActions_Base
 {
 public:
 
@@ -46,7 +46,7 @@ public:
 };
 
 //detail customization
-class FChuckInstanceDetails : public IDetailCustomization
+class FChuckProcessorDetails : public IDetailCustomization
 {
 public:
 	// This function will be called when the properties are being customized
@@ -101,7 +101,7 @@ public:
 
 	}
 
-	static TSharedRef<IDetailCustomization> MakeInstance() { return MakeShareable(new FChuckInstanceDetails()); }
+	static TSharedRef<IDetailCustomization> MakeInstance() { return MakeShareable(new FChuckProcessorDetails()); }
 
 private:
 	UChuckProcessor* ChuckInstance = nullptr;
@@ -111,7 +111,7 @@ private:
 	// This function will create a new instance of this class as a shared
 
 /**
- *
+ * So, more of a factory for a 'Chuck Code Proxy' than a 'Chuck Processor', but let's figure this out
  */
 UCLASS()
 class CHUNREALEDITOR_API UChuckInstanceFactory : public UFactory
@@ -141,3 +141,59 @@ public:
 		SupportedClass = UChuckProcessor::StaticClass();
 	}
 };
+
+UCLASS()
+class CHUNREALEDITOR_API UChuckInstantiationFactory : public UFactory
+{
+	GENERATED_BODY()
+
+	public:
+	//~ UFactory Interface
+	virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn, FName CallingContext) override
+	{
+		//print object flags
+
+		UChuckInstantiation* NewInstance = NewObject<UChuckInstantiation>(InParent, InClass, InName, Flags);
+
+		return NewInstance;
+	}
+
+	virtual bool ShouldShowInNewMenu() const override
+	{
+		return true;
+	}
+		
+	UChuckInstantiationFactory()
+	{
+		bCreateNew = true;
+		bEditAfterNew = true;
+		SupportedClass = UChuckInstantiation::StaticClass();
+	}
+};
+
+//asset actions for UChuckInstantiation, temporary, the whole point of this class is that it's NOT an asset
+class CHUNREALEDITOR_API FChuckInstantiationAssetActions : public FAssetTypeActions_Base
+{
+
+public:
+
+	UClass* GetSupportedClass() const override
+	{
+		return UChuckInstantiation::StaticClass();
+	}
+	FText GetName() const override
+	{
+		return INVTEXT("ChucK Instantiation");
+	}
+	FColor GetTypeColor() const override
+	{
+		return FColor::Purple;
+	}
+	uint32 GetCategories() override
+	{
+		return EAssetTypeCategories::Sounds;
+	}
+
+};
+
+
