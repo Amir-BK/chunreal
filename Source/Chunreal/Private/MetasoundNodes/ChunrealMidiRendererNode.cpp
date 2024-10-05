@@ -319,25 +319,17 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			}
 
 			//get proxy 
-			if (CurrentChuckGuid != ChuckInstance.GetProxy()->ChuckProcessor->ChuckGuid)
+			if (ChuckInstance.GetProxy()->ChuckInstance->ChuckInstance != nullptr)
 			{
 				//we have a new chuck instance (or the source file has been changed), we can now reinitialize the chuck
-				ChuckProcessor = ChuckInstance.GetProxy()->ChuckProcessor;
+				theChuck = ChuckInstance.GetProxy()->ChuckInstance->ChuckInstance;
 
 				if (theChuck == nullptr)
 				{
-					theChuck = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate);
+					//theChuck = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate);
 				}
 
-				theChuck->init();
-				theChuck->start();
 				
-				CurrentChuckGuid = ChuckProcessor->ChuckGuid;
-		
-				//DeinterleavedBuffer.resize(2 * BlockSizeFrames);
-				//DecodedAudioDataBuffer.resize(2 * BlockSizeFrames);
-
-				// if buffer is initialized, delete it and set to false
 				if (bufferInitialized)
 				{
 					delete inBufferInterleaved;
@@ -345,19 +337,8 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 					bufferInitialized = false;
 				}
 
-				if (hasSporkedOnce)
-				{
-					Chuck_Msg* msg = new Chuck_Msg;
-					msg->type = 3;  //MSG_REMOVEALL
-					theChuck->vm()->process_msg(msg);
-				}
-				else
-				{
-					hasSporkedOnce = true;
-				}
 
-				ChuckProcessor->CompileChuckAsset(theChuck);
-
+				//delete static_cast<int*>(data);
 
 				//theChuck->probeChugins();
 

@@ -162,7 +162,8 @@ public:
 
 private:
 
-	TSharedPtr<FChuckInstanceAssetActions> ChuckInstanceActionsSharedPtr;
+	TSharedPtr<FChuckProcessorAssetActions> ChuckInstanceActionsSharedPtr;
+	TSharedPtr<FChuckInstantiationAssetActions> ChuckInstantiationActionsSharedPtr;
 	//TSharedPtr<FChunrealAssetStyles> ChunrealStylesSharedPtr;
 
 	static TSharedRef<SDockTab> SpawnCodeEditorTab(const FSpawnTabArgs& TabArgs)

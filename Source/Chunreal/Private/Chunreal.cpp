@@ -68,7 +68,8 @@ void FChunrealModule::StartupModule()
     //Register MetaSound Nodes
     FMetasoundFrontendRegistryContainer::Get()->RegisterPendingNodes();
 
-	Metasound::RegisterDataTypeWithFrontend<Metasound::FChuckInstance, Metasound::ELiteralType::UObjectProxy, UChuckProcessor>();
+	Metasound::RegisterDataTypeWithFrontend<Metasound::FChuckProcessor, Metasound::ELiteralType::UObjectProxy, UChuckProcessor>();
+	Metasound::RegisterDataTypeWithFrontend<Metasound::FChuckInstance, Metasound::ELiteralType::UObjectProxy, UChuckInstantiation>();
 
 
 	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FChunrealModule::ScanWorkingDirectoryForChucks);

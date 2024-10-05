@@ -10,6 +10,9 @@
 //#include "Chunreal/chuck/chuck.h"
 #include "ChuckInstance.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnChuckNeedsRecompile);
+
+class UChuckInstantiation;
 
 //class FChuckInstanceProxy;
 /**
@@ -50,9 +53,18 @@ public:
 	//spawn chuck with optional instance ID for registration with the module, we'll see about destroying it later
 	ChucK* SpawnChuckFromAsset(FString InstanceID = FString(), int32 InSampleRate = 48000, int32 InNumChannels = 2);
 
+	UFUNCTION(BlueprintCallable, Category = "ChucK")
+	UChuckInstantiation* SpawnChuckInstance(int32 InSampleRate = 48000, int32 InNumChannels = 2);
+
 	void CompileChuckAsset(ChucK* chuckRef);
 
 	//TMap<FString, Chuck*> ChuckInstances;
+
+	FOnChuckNeedsRecompile OnChuckNeedsRecompile;
+
+	void ChuckCodeUpdated() {
+		OnChuckNeedsRecompile.Broadcast();
+	}
 
 private:
 	ChucK* Chuck = nullptr;
@@ -86,23 +98,57 @@ public:
 //this should represent a live instance of a chuck vm, it is not meant to be shared by sound generators as this will corrupt the buffers
 //Differentiating between the two kind of objects lets us use Chucks as templates while also having access to their parameters, from metasound as well as BP and code.
 UCLASS(BlueprintType)
-class CHUNREAL_API UChuckInstantiation : public UChuckProcessor
+class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataFactory
 {
 	GENERATED_BODY()
 
+	
+
+	TArray<FAudioParameter> InputParameters;
+	TArray<FAudioParameter> OutputParameters;
+public:
+	// Inherited via IAudioProxyDataFactory
+	virtual TSharedPtr<Audio::IProxyData> CreateProxyData(const Audio::FProxyDataInitParams& InitParams) override;
+
+	UFUNCTION(BlueprintCallable, Category = "ChucK")
+	TArray<FAudioParameter> GetAllGlobalOutputsFromChuck();
+
+
+
+public:
 	ChucK* ChuckInstance = nullptr;
+
+};
+
+//proxy for Instantiations
+class CHUNREAL_API FChuckInstanceProxy : public Audio::TProxyData<FChuckInstanceProxy>
+{
+public:
+	IMPL_AUDIOPROXY_CLASS(FChuckInstanceProxy);
+
+	explicit FChuckInstanceProxy(UChuckInstantiation* InChuckInstance)
+		:
+		ChuckInstance(InChuckInstance)
+	{
+	}
+
+	FChuckInstanceProxy(const FChuckInstanceProxy& Other) = default;
+
+	UChuckInstantiation* ChuckInstance = nullptr;
+	//FString ChuckCode;
+
 
 };
 
 namespace Metasound
 {
-	class CHUNREAL_API FChuckInstance
+	class CHUNREAL_API FChuckProcessor
 	{
 	public:
-		FChuckInstance() = default;
-		FChuckInstance(const FChuckInstance&) = default;
-		FChuckInstance& operator=(const FChuckInstance& Other) = default;
-		FChuckInstance(const TSharedPtr<Audio::IProxyData>& InInitData)
+		FChuckProcessor() = default;
+		FChuckProcessor(const FChuckProcessor&) = default;
+		FChuckProcessor& operator=(const FChuckProcessor& Other) = default;
+		FChuckProcessor(const TSharedPtr<Audio::IProxyData>& InInitData)
 		{
 			ChuckProxy = StaticCastSharedPtr<FChuckCodeProxy>(InInitData);
 		}
@@ -117,7 +163,29 @@ namespace Metasound
 		TSharedPtr<FChuckCodeProxy, ESPMode::ThreadSafe> ChuckProxy;
 	};
 
+	DECLARE_METASOUND_DATA_REFERENCE_TYPES(FChuckProcessor, CHUNREAL_API, FChuckProcessorTypeInfo, FChuckProcessorReadRef, FChuckProcessorWriteRef)
+
+	class CHUNREAL_API FChuckInstance
+	{
+	public:
+		FChuckInstance() = default;
+		FChuckInstance(const FChuckInstance&) = default;
+		FChuckInstance& operator=(const FChuckInstance& Other) = default;
+		FChuckInstance(const TSharedPtr<Audio::IProxyData>& InInitData)
+		{
+			ChuckProxy = StaticCastSharedPtr<FChuckInstanceProxy>(InInitData);
+		}
+
+		bool IsInitialized() const { return ChuckProxy.IsValid(); }
+
+		//void RegenerateInputs() const { ChuckProxy->RegenerateInputs(); }
+
+		const FChuckInstanceProxy* GetProxy() const { return ChuckProxy.Get(); }
+
+	private:
+		TSharedPtr<FChuckInstanceProxy, ESPMode::ThreadSafe> ChuckProxy;
+	};
+
 	DECLARE_METASOUND_DATA_REFERENCE_TYPES(FChuckInstance, CHUNREAL_API, FChuckInstanceTypeInfo, FChuckInstanceReadRef, FChuckInstanceWriteRef)
-
-
+	
 }
