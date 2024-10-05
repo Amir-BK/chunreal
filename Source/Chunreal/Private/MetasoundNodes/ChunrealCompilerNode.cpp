@@ -256,10 +256,39 @@ namespace ChunrealMetasounds::ChuckCompiler
 
 		void Execute()
 		{
-			
+			//if we have a chuck code asset, compile it and create a chuck instance
+			if (Inputs.ChuckInstance->IsInitialized() && !bIsProxySet)
+			{
+				auto Proxy = Inputs.ChuckInstance->GetProxy();
+				//if we have a chuck code asset, compile it and create a chuck instance
+				auto* NewInstantiation = Proxy->ChuckProcessor->SpawnChuckInstance(SampleRate, 2);
+				Audio::FProxyDataInitParams InitParams;
+				auto NewProxy = FChuckInstance(NewInstantiation->CreateProxyData(InitParams));
+				//NewProxy.ChuckInstance = NewInstantiation;
+				Outputs.ChuckInstanceOut->operator=(NewProxy);
+
+
+				if (hasSporkedOnce)
+				{
+					Chuck_Msg* msg = new Chuck_Msg;
+					msg->type = 3;  //MSG_REMOVEALL
+					theChuck->vm()->process_msg(msg);
+				}
+				else
+				{
+					hasSporkedOnce = true;
+				}
+
+
+
+				bIsProxySet = true;
+			}
 
 		}
 	private:
+
+		bool bIsProxySet = false;
+
 		FInputs Inputs;
 		FOutputs Outputs;
 

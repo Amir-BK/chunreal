@@ -1,8 +1,7 @@
 // stereo reverb
 adc => JCRev revL => LPF LpfL => Gain gL => dac.left;
 adc => JCRev revR => LPF LpfR => Gain gR => dac.right;
-
-
+Math.
 // set effects mix
 
 //Low pass frequency 
@@ -16,9 +15,9 @@ adc => JCRev revR => LPF LpfR => Gain gR => dac.right;
 dacGain => gL.gain;
 dacGain => gR.gain;
 
-f => LpfL.freq;
+f => LpfL.gain;
 f => LpfR.freq;
-
+//evL.
 
 mixGain => revL.gain;
 mixGain => revR.gain;

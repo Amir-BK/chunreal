@@ -10,6 +10,8 @@
 //#include "Chunreal/chuck/chuck.h"
 #include "ChuckInstance.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnChuckNeedsRecompile);
+
 class UChuckInstantiation;
 
 //class FChuckInstanceProxy;
@@ -58,6 +60,12 @@ public:
 
 	//TMap<FString, Chuck*> ChuckInstances;
 
+	FOnChuckNeedsRecompile OnChuckNeedsRecompile;
+
+	void ChuckCodeUpdated() {
+		OnChuckNeedsRecompile.Broadcast();
+	}
+
 private:
 	ChucK* Chuck = nullptr;
 
@@ -98,7 +106,7 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 
 	TArray<FAudioParameter> InputParameters;
 	TArray<FAudioParameter> OutputParameters;
-
+public:
 	// Inherited via IAudioProxyDataFactory
 	virtual TSharedPtr<Audio::IProxyData> CreateProxyData(const Audio::FProxyDataInitParams& InitParams) override;
 

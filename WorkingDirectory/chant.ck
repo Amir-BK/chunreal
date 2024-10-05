@@ -30,7 +30,7 @@ p => TwoPole f1 => Gain g;
 p => TwoPole f2 => g;
 p => TwoPole f3 => g;
 // reverbs
-g => JCRev r => dac;
+g => JCRev r => FFT fft =^ Centroid centroid => Flip flip =^ AutoCorr corr => dac;
 g => JCRev rL => dac;
 g => JCRev rR => dac;
 // delays
@@ -39,6 +39,33 @@ g => Delay d2 => Gain g2 => rL;
 g => Delay d3 => Gain g3 => rR;
 // connect gains to delays
 g1 => d1; g2 => d2; g3 => d3;
+
+// analysis zie
+512 => flip.size;
+// output in [-1,1]
+//true => corr.normalize;
+// calculate sample rate
+//second/samp => float srate;
+
+// pitch estimate
+fun float estimatePitch()
+{
+    // perform analysis at corr (propagating backwards)
+    corr.upchuck();
+    // for simplicity, ignore bins for notes that are "too high"
+    // to care about; stop at the mid-point because it's symmetrical.
+    (srate/Std.mtof(90)) $ int => int maxBin;
+    // iterate over result of analysis
+    for( maxBin => int bin; bin < corr.fvals().size()/2; bin++ )
+    {
+        // look for max
+        if( corr.fval(bin) >= corr.fval(maxBin) ) {
+            bin => maxBin;
+        }
+    }
+    // return frequency
+    return srate/maxBin;
+}
 
 // source gain (amplitude of the impulse train)
 0.25 => float sourceGain;
@@ -83,6 +110,8 @@ Math.random2f( 1700.0, 3000.0 ) => f3.freq;
 0.013 => float targetPeriod;
 0.0 => float modphase;
 0.0001 => global float vibratoDepth;
+[0,1,2,3,4,5] @=> global int TestArray[];
+65 => global int TestInt;
 
 // scale
 [ 0, 1, 5, 7,
@@ -98,10 +127,24 @@ Math.random2f( 1700.0, 3000.0 ) => f3.freq;
 9 => int scalepoint;
 // frequency
 global float theFreq;
+global float theCentroid;
+global float pitchEstimate;
 
 // spork two concurrent child shreds...
 spork ~ doImpulse(); // generate voice source
 spork ~ doInterpolation( 10::ms ); // interpolate pitch and formants
+
+// set FFT size
+1024 => fft.size;
+// set window type and size
+Windowing.hann(fft.size()) => fft.window;
+// our hop size (how often to perform analysis)
+fft.size()::samp => dur HOP;
+// compute srate
+second / samp => float srate;
+
+// let one FFT-size of time pass (to buffer)
+fft.size()::samp => now;
 
 // main shred loop
 while( true )
@@ -119,11 +162,19 @@ while( true )
     32 + scale[scalepoint] => Std.mtof => theFreq;
     // print things for fun
     <<< names[scalepoint], theFreq >>>;
+	<<< "Vibrato Depth:" ,vibratoDepth >>>;
     // calculate corresponding target period
     1.0 / theFreq  => targetPeriod;
+	centroid.upchuck();
+
+    // get and print the output
+    //<<< "centroid (hz):", centroid.fval(0) * srate / 2 >>>;
+	 centroid.fval(0) * srate / 2 => theCentroid;
+	estimatePitch() => pitchEstimate;
 
     // wait until next note
     Math.random2f( 0.2, 0.9 )::second => now;
+
 }
 
 // entry point for shred: generate source impulse train
@@ -136,10 +187,12 @@ fun void doImpulse()
         sourceGain => i.next;
         // phase variable
         modphase + period => modphase;
+
         // vibrato depth
         //.0001 => vibratoDepth;
         // modulate wait time until next impulse: vibrato
         (period + vibratoDepth*Math.sin(2*pi*modphase*6.0))::second => now;
+
     }
 }
 

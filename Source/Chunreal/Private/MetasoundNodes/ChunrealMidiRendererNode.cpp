@@ -111,7 +111,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			static const FVertexInterface Interface(
 				FInputVertexInterface(
 
-					TInputDataVertex<FChuckProcessor>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::ChuckInstance)),
+					TInputDataVertex<FChuckInstance>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::ChuckInstance)),
 					//audio inputs
 					TInputDataVertex<FAudioBuffer>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::AudioInLeft)),
 					TInputDataVertex<FAudioBuffer>(METASOUND_GET_PARAM_NAME_AND_METADATA(Inputs::AudioInRight)),
@@ -133,7 +133,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		struct FInputs
 		{
 	
-			FChuckProcessorReadRef ChuckInstance;
+			FChuckInstanceReadRef ChuckInstance;
 			FAudioBufferReadRef AudioInLeft;
 			FAudioBufferReadRef AudioInRight;
 			FMidiStreamReadRef MidiStream;
@@ -151,7 +151,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			{
 				//compile trigger
 
-				InputData.GetOrCreateDefaultDataReadReference<FChuckProcessor>(Inputs::ChuckInstanceName, InParams.OperatorSettings),
+				InputData.GetOrCreateDefaultDataReadReference<FChuckInstance>(Inputs::ChuckInstanceName, InParams.OperatorSettings),
 				//audio inputs
 				InputData.GetOrConstructDataReadReference<FAudioBuffer>(Inputs::AudioInLeftName, InParams.OperatorSettings),
 				InputData.GetOrConstructDataReadReference<FAudioBuffer>(Inputs::AudioInRightName, InParams.OperatorSettings),
@@ -311,7 +311,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			const int32 numSamples = Inputs.AudioInLeft->Num();
 
 			//check that we received a valid chuck through the input
-			const FChuckProcessor& ChuckInstance = *Inputs.ChuckInstance;
+			const FChuckInstance& ChuckInstance = *Inputs.ChuckInstance;
 			if (!ChuckInstance.IsInitialized())
 			{
 				ChuckProcessor = nullptr;
@@ -319,25 +319,17 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			}
 
 			//get proxy 
-			if (CurrentChuckGuid != ChuckInstance.GetProxy()->ChuckProcessor->ChuckGuid)
+			if (ChuckInstance.GetProxy()->ChuckInstance->ChuckInstance != nullptr)
 			{
 				//we have a new chuck instance (or the source file has been changed), we can now reinitialize the chuck
-				ChuckProcessor = ChuckInstance.GetProxy()->ChuckProcessor;
+				theChuck = ChuckInstance.GetProxy()->ChuckInstance->ChuckInstance;
 
 				if (theChuck == nullptr)
 				{
-					theChuck = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate);
+					//theChuck = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate);
 				}
 
-				theChuck->init();
-				theChuck->start();
 				
-				CurrentChuckGuid = ChuckProcessor->ChuckGuid;
-		
-				//DeinterleavedBuffer.resize(2 * BlockSizeFrames);
-				//DecodedAudioDataBuffer.resize(2 * BlockSizeFrames);
-
-				// if buffer is initialized, delete it and set to false
 				if (bufferInitialized)
 				{
 					delete inBufferInterleaved;
@@ -345,34 +337,8 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 					bufferInitialized = false;
 				}
 
-				if (hasSporkedOnce)
-				{
-					Chuck_Msg* msg = new Chuck_Msg;
-					msg->type = 3;  //MSG_REMOVEALL
-					theChuck->vm()->process_msg(msg);
-				}
-				else
-				{
-					hasSporkedOnce = true;
-				}
 
-				ChuckProcessor->CompileChuckAsset(theChuck);
-				// Define the callback function
-				auto MyCallbackFunction = [](const std::vector<Chuck_Globals_TypeValue>& list, void* data) {
-					// Process the list of global variables
-					UE_LOG(LogTemp, Log, TEXT("Processing list of global variables"));
-					for (const auto& item : list) {
-						// Example: Print the name of each global variable
-						UE_LOG(LogTemp, Log, TEXT("Global Variable: %s"), *FString(item.name.c_str()));
-					}
-					};
-
-				// Call the getAllGlobalVariables method
-				void* data = new long;
-
-				theChuck->globals()->getAllGlobalVariables(MyCallbackFunction, data);
-
-				delete static_cast<int*>(data);
+				//delete static_cast<int*>(data);
 
 				//theChuck->probeChugins();
 
