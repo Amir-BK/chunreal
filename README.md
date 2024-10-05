@@ -13,6 +13,10 @@ https://github.com/user-attachments/assets/88edb1d8-1f97-4d69-8c2e-0e19875bf209
 
 https://github.com/user-attachments/assets/accddb23-fffd-4d21-80f7-6d6ad3640467
 
+5. Real time parameter getters and setters within metasounds - 
+
+https://github.com/user-attachments/assets/780c46c0-8e04-432e-936f-ac7ac1afeca2
+
 
 # Purpose of fork -
 This fork encapsulates the chunreal repo as a plugin and makes some changes to the way the ChucK classes interact with Unreal.
