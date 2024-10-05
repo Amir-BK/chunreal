@@ -62,10 +62,10 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "ChucK")
-	UChuckProcessor* SpawnChuckInstanceFromCode()
+	UChuckCode* SpawnChuckCodeObjectFromWidget()
 	{
 		FString Code = GetCode().ToString();
-		UChuckProcessor* ChuckInstance = NewObject<UChuckProcessor>();
+		UChuckCode* ChuckInstance = NewObject<UChuckCode>();
 		ChuckInstance->Code = Code;
 		ChuckInstance->ChuckGuid = FGuid::NewGuid();
 		return ChuckInstance;

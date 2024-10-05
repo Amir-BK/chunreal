@@ -11,7 +11,7 @@ inline void FSourceEffectChuck::OnPresetChanged()
 		ChuckProcessor = Settings.ChuckInstance;
 		if (IsValid(ChuckProcessor))
 		{
-			ChuckRef = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate, NumChannels);
+			ChuckRef = ChuckProcessor->CreateChuckInstance(FString(), SampleRate, NumChannels);
 			ChuckRef->init();
 			ChuckRef->start();
 		}
@@ -89,7 +89,7 @@ void FSubmixChuckEffect::OnPresetChanged()
 			ChuckProcessor = Settings.ChuckInstance;
 			if (IsValid(ChuckProcessor))
 			{
-				ChuckRef = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate, NumChannels);
+				ChuckRef = ChuckProcessor->CreateChuckInstance(FString(), SampleRate, NumChannels);
 				ChuckRef->init();
 				ChuckRef->start();
 			}

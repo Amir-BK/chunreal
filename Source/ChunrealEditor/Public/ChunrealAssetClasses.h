@@ -28,7 +28,7 @@ public:
 
 	UClass* GetSupportedClass() const override
 	{
-		return UChuckProcessor::StaticClass();
+		return UChuckCode::StaticClass();
 	}
 	FText GetName() const override
 	{
@@ -64,7 +64,7 @@ public:
 		TArray<TWeakObjectPtr<UObject>> Outers;
 		DetailBuilder.GetObjectsBeingCustomized(Outers);
 		if (Outers.Num() == 0) return;
-		ChuckInstance = Cast<UChuckProcessor>(Outers[0].Get());
+		ChuckInstance = Cast<UChuckCode>(Outers[0].Get());
 
 		//add category "ChucK" and add a MultiLineEditableText to is with the ChucK Marshaller
 		IDetailCategoryBuilder& ChucKCategory = DetailBuilder.EditCategory("Chuck");
@@ -104,7 +104,7 @@ public:
 	static TSharedRef<IDetailCustomization> MakeInstance() { return MakeShareable(new FChuckProcessorDetails()); }
 
 private:
-	UChuckProcessor* ChuckInstance = nullptr;
+	UChuckCode* ChuckInstance = nullptr;
 
 };
 
@@ -125,7 +125,7 @@ public:
 		//print object flags
 
 		
-		UChuckProcessor* NewInstance = NewObject<UChuckProcessor>(InParent, InClass, InName, Flags);
+		UChuckCode* NewInstance = NewObject<UChuckCode>(InParent, InClass, InName, Flags);
 		return NewInstance;
 	}
 
@@ -138,7 +138,7 @@ public:
 	{
 		bCreateNew = true;
 		bEditAfterNew = true;
-		SupportedClass = UChuckProcessor::StaticClass();
+		SupportedClass = UChuckCode::StaticClass();
 	}
 };
 

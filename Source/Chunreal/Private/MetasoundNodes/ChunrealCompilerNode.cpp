@@ -373,7 +373,7 @@ namespace ChunrealMetasounds::ChuckCompiler
 			bool bufferInitialized = false;
 			bool hasSporkedOnce = false;
 
-			UChuckProcessor* ChuckProcessor = nullptr;
+			UChuckCode* ChuckProcessor = nullptr;
 			FGuid CurrentChuckGuid;
 
 	

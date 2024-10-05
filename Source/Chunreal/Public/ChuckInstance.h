@@ -20,7 +20,7 @@ class UChuckInstantiation;
  * So it's more of a template and I might rename it to reflect this
  */
 UCLASS(BlueprintType)
-class CHUNREAL_API UChuckProcessor : public UObject, public IAudioProxyDataFactory
+class CHUNREAL_API UChuckCode : public UObject, public IAudioProxyDataFactory
 {
 	GENERATED_BODY()
 
@@ -51,7 +51,7 @@ public:
 	bool bShareChuck = false;
 
 	//spawn chuck with optional instance ID for registration with the module, we'll see about destroying it later
-	ChucK* SpawnChuckFromAsset(FString InstanceID = FString(), int32 InSampleRate = 48000, int32 InNumChannels = 2);
+	ChucK* CreateChuckInstance(FString InstanceID = FString(), int32 InSampleRate = 48000, int32 InNumChannels = 2);
 
 	UFUNCTION(BlueprintCallable, Category = "ChucK")
 	UChuckInstantiation* SpawnChuckInstance(int32 InSampleRate = 48000, int32 InNumChannels = 2);
@@ -81,7 +81,7 @@ class CHUNREAL_API FChuckCodeProxy : public Audio::TProxyData<FChuckCodeProxy>
 public:
 	IMPL_AUDIOPROXY_CLASS(FChuckCodeProxy);
 
-	explicit FChuckCodeProxy(UChuckProcessor* InChuckProcessor)
+	explicit FChuckCodeProxy(UChuckCode* InChuckProcessor)
 		: 
 		ChuckProcessor(InChuckProcessor)
 	{
@@ -89,7 +89,7 @@ public:
 
 	FChuckCodeProxy(const FChuckCodeProxy& Other) = default;
 
-	UChuckProcessor* ChuckProcessor = nullptr;
+	UChuckCode* ChuckProcessor = nullptr;
 	//FString ChuckCode;
 
 
@@ -102,20 +102,28 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 {
 	GENERATED_BODY()
 
-	
+	~UChuckInstantiation()
+	{
+		if (ChuckInstance)
+		{
 
+			delete ChuckInstance;
+		}
+	}
 	TArray<FAudioParameter> InputParameters;
 	TArray<FAudioParameter> OutputParameters;
 public:
 	// Inherited via IAudioProxyDataFactory
 	virtual TSharedPtr<Audio::IProxyData> CreateProxyData(const Audio::FProxyDataInitParams& InitParams) override;
 
+	//doesn't actually work, in theory it could be used to map all the i/os from a chuck, maybe should be attempted using ckdoc class
 	UFUNCTION(BlueprintCallable, Category = "ChucK")
 	TArray<FAudioParameter> GetAllGlobalOutputsFromChuck();
 
 
 
 public:
+	//probably shoulnd't be public
 	ChucK* ChuckInstance = nullptr;
 
 };

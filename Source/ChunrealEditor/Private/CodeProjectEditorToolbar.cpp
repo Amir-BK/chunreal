@@ -52,14 +52,14 @@ void FCodeProjectEditorToolbar::FillEditorToolbar(FToolBarBuilder& ToolbarBuilde
 				static void PrintAllChuckAsetNames(TSharedPtr<FCodeProjectEditor> InCodeProjectEditorPtr)
 				{
 					//get all UChuckProcessors
-					TArray<UChuckProcessor*> ChuckProcessors;
-					for (TObjectIterator<UChuckProcessor> Itr; Itr; ++Itr)
+					TArray<UChuckCode*> ChuckProcessors;
+					for (TObjectIterator<UChuckCode> Itr; Itr; ++Itr)
 					{
 						ChuckProcessors.Add(*Itr);
 					}
 
 					//print their names
-					for (UChuckProcessor* ChuckProcessor : ChuckProcessors)
+					for (UChuckCode* ChuckProcessor : ChuckProcessors)
 					{
 						bool bIsAsset = ChuckProcessor->IsAsset();
 						bool bIsInTransientPackage = ChuckProcessor->GetPackage() == GetTransientPackage();

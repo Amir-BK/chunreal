@@ -33,11 +33,11 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-	static UChuckProcessor* GetProcessorProxyForChuck(const FString& InChuckPath)
+	static UChuckCode* GetProcessorProxyForChuck(const FString& InChuckPath)
 	{
 		const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 		TArray<FAssetData> AssetData;
-		AssetRegistryModule.Get().GetAssetsByClass(UChuckProcessor::StaticClass()->GetClassPathName(), AssetData, true);
+		AssetRegistryModule.Get().GetAssetsByClass(UChuckCode::StaticClass()->GetClassPathName(), AssetData, true);
 		FString ChuckName = FPaths::GetBaseFilename(InChuckPath);
 		ChuckName.RemoveSpacesInline();
 
@@ -50,7 +50,7 @@ public:
 
 		if (ExistingAssetIndex != INDEX_NONE)
 		{
-			return Cast<UChuckProcessor>(AssetData[ExistingAssetIndex].GetAsset());
+			return Cast<UChuckCode>(AssetData[ExistingAssetIndex].GetAsset());
 		}
 		else
 		{
@@ -72,7 +72,7 @@ public:
 		auto* Factory = NewObject<UChuckInstanceFactory>();
 
 		TArray<FAssetData> AssetData;
-		AssetRegistryModule.Get().GetAssetsByClass(UChuckProcessor::StaticClass()->GetClassPathName(), AssetData, true);
+		AssetRegistryModule.Get().GetAssetsByClass(UChuckCode::StaticClass()->GetClassPathName(), AssetData, true);
 
 		
 
@@ -96,19 +96,19 @@ public:
 				
 				});
 			
-			UChuckProcessor* ChuckProcessor = nullptr;
+			UChuckCode* ChuckProcessor = nullptr;
 			UE_LOG(LogTemp, Log, TEXT("Index : %d"), ExistingAssetIndex);
 			if (ExistingAssetIndex != INDEX_NONE)
 			{
-				ChuckProcessor = Cast<UChuckProcessor>(AssetData[ExistingAssetIndex].GetAsset());
+				ChuckProcessor = Cast<UChuckCode>(AssetData[ExistingAssetIndex].GetAsset());
 				AssetData.RemoveAtSwap(ExistingAssetIndex);
 				UE_LOG(LogTemp, Log, TEXT("Found Chuck file: %s, already exists as asset."), *ChuckFile);
 	
 			}
 			else {
 
-				UObject* ChuckNewObject = AssetTools.CreateAsset(ChuckName, TEXT("/chunreal/chunreal/RuntimeChucks"), UChuckProcessor::StaticClass(), Factory);
-				ChuckProcessor = Cast<UChuckProcessor>(ChuckNewObject);
+				UObject* ChuckNewObject = AssetTools.CreateAsset(ChuckName, TEXT("/chunreal/chunreal/RuntimeChucks"), UChuckCode::StaticClass(), Factory);
+				ChuckProcessor = Cast<UChuckCode>(ChuckNewObject);
 				ChuckProcessor->bIsAutoManaged = true;
 				ChuckProcessor->SourcePath = WorkingDir + "/" + ChuckFile;
 				ChuckProcessor->ChuckGuid = FGuid::NewGuid();

@@ -24,7 +24,7 @@ struct FSubmixChuckEffectSettings
 
 	//chuck ref
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
-	TObjectPtr<UChuckProcessor> ChuckInstance;
+	TObjectPtr<UChuckCode> ChuckInstance;
 
 };
 
@@ -80,7 +80,7 @@ class CHUNREAL_API FSubmixChuckEffect : public FSoundEffectSubmix
 	int32 SampleRate;
 	int32 NumChannels = 2;
 	ChucK* ChuckRef = nullptr;
-	TObjectPtr<UChuckProcessor> ChuckProcessor; // should really make this name consistent with the rest of the codebase
+	TObjectPtr<UChuckCode> ChuckProcessor; // should really make this name consistent with the rest of the codebase
 	
 };
 
@@ -122,7 +122,7 @@ struct CHUNREAL_API FSourceEffectChuckSettings
 
 	//chuck ref
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Realtime)
-	TObjectPtr<UChuckProcessor> ChuckInstance;
+	TObjectPtr<UChuckCode> ChuckInstance;
 
 
 };
@@ -179,7 +179,7 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 	int32 SampleRate;
 	int32 NumChannels = 2;
 	ChucK* ChuckRef = nullptr;
-	TObjectPtr<UChuckProcessor> ChuckProcessor; // should really make this name consistent with the rest of the codebase
+	TObjectPtr<UChuckCode> ChuckProcessor; // should really make this name consistent with the rest of the codebase
 };
 
 

@@ -12,13 +12,13 @@ DEFINE_LOG_CATEGORY_STATIC(LogChuckInstance, VeryVerbose, All);
 DEFINE_METASOUND_DATA_TYPE(Metasound::FChuckProcessor, "ChucK Processor")
 DEFINE_METASOUND_DATA_TYPE(Metasound::FChuckInstance, "ChucK Instance")
 
-inline TSharedPtr<Audio::IProxyData> UChuckProcessor::CreateProxyData(const Audio::FProxyDataInitParams& InitParams)
+inline TSharedPtr<Audio::IProxyData> UChuckCode::CreateProxyData(const Audio::FProxyDataInitParams& InitParams)
 {
 
 	return MakeShared<FChuckCodeProxy>(this);
 }
 
-bool UChuckProcessor::CompileChuckCode()
+bool UChuckCode::CompileChuckCode()
 {
 	const auto PlatformAudioSettings = FAudioPlatformSettings::GetPlatformSettings(FPlatformProperties::GetRuntimeSettingsClassName());
 	const auto PlatformSampleRate = PlatformAudioSettings.SampleRate;
@@ -30,7 +30,7 @@ bool UChuckProcessor::CompileChuckCode()
 	return false;
 }
 
-ChucK* UChuckProcessor::SpawnChuckFromAsset(FString InstanceID, int32 InSampleRate, int32 InNumChannels)
+ChucK* UChuckCode::CreateChuckInstance(FString InstanceID, int32 InSampleRate, int32 InNumChannels)
 {
 	ChucK* theChuck = new ChucK();
 	
@@ -62,10 +62,10 @@ ChucK* UChuckProcessor::SpawnChuckFromAsset(FString InstanceID, int32 InSampleRa
 	return theChuck;
 }
 
-UChuckInstantiation* UChuckProcessor::SpawnChuckInstance(int32 InSampleRate, int32 InNumChannels)
+UChuckInstantiation* UChuckCode::SpawnChuckInstance(int32 InSampleRate, int32 InNumChannels)
 {
 	auto* NewChuck = NewObject<UChuckInstantiation>(this);
-	NewChuck->ChuckInstance = SpawnChuckFromAsset(FString(), InSampleRate, InNumChannels);
+	NewChuck->ChuckInstance = CreateChuckInstance(FString(), InSampleRate, InNumChannels);
 	//need to init
 	NewChuck->ChuckInstance->init();
 	NewChuck->ChuckInstance->start();
@@ -74,7 +74,7 @@ UChuckInstantiation* UChuckProcessor::SpawnChuckInstance(int32 InSampleRate, int
 	return NewChuck;
 }
 
-void UChuckProcessor::CompileChuckAsset(ChucK* chuckRef)
+void UChuckCode::CompileChuckAsset(ChucK* chuckRef)
 {
 	if (bIsAutoManaged)
 	{
