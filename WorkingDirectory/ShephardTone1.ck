@@ -1,11 +1,9 @@
-//--------------------------------------------------------------------
 // name: shepard.ck
 // desc: continuous shepard-risset tone generator; 
 //       ascending but can easily made to descend
 //
 // author: Ge Wang (https://ccrma.stanford.edu/~ge/)
 //   date: spring 2016
-//--------------------------------------------------------------------
 
 // mean for normal intensity curve
 66 => float MU;
@@ -19,7 +17,7 @@
 1::ms => dur T;
 
 // starting pitches (in MIDI note numbers, octaves apart)
-[ 12.0, 24, 36, 47, 60, 72, 85, 96, 108 , 39, 45, 51, 57 ] @=> float pitches[];
+[ 12.0, 24, 36, 48, 60, 72, 84, 96, 108 ] @=> float pitches[];
 // number of tones
 pitches.size() => int N;
 // bank of tones
@@ -39,7 +37,7 @@ while( true )
         // compute loundess for each tone
         Math.gauss( pitches[i], MU, SIGMA ) * SCALE => float intensity;
         // map intensity to amplitude
-        intensity*90 => Math.dbtorms => tones[i].gain;
+        intensity*96 => Math.dbtorms => tones[i].gain;
         // increment pitch
         INC +=> pitches[i];
         // wrap (for positive INC)
@@ -51,5 +49,3 @@ while( true )
     // advance time
     T => now;
 }
-//
-fun void UCHUCK() {}; // another alternative to marking as an asset
