@@ -275,7 +275,6 @@ namespace ChunrealMetasound
 				FInputVertexInterface(
 					TInputDataVertex<FChuckInstance>(METASOUND_GET_PARAM_NAME_AND_METADATA(ChuckInstance)),
 					TInputDataVertex<FString>(METASOUND_GET_PARAM_NAME_AND_METADATA(ParamName)),
-					TInputDataVertex<FTrigger>(METASOUND_GET_PARAM_NAME_AND_METADATA(InputSetTrigger)),
 					TInputDataVertex<ValueType>(METASOUND_GET_PARAM_NAME_AND_METADATA(InputTargetValue))
 				),
 				FOutputVertexInterface(
@@ -311,19 +310,17 @@ namespace ChunrealMetasound
 			
 			FChuckInstanceReadRef ChuckInstance = InputData.GetOrCreateDefaultDataReadReference<FChuckInstance>(METASOUND_GET_PARAM_NAME(ChuckInstance), InParams.OperatorSettings);
 			FStringReadRef ParamName = InputData.GetOrCreateDefaultDataReadReference<FString>(METASOUND_GET_PARAM_NAME(ParamName), InParams.OperatorSettings);
-			FTriggerReadRef SetTrigger = InputData.GetOrConstructDataReadReference<FTrigger>(METASOUND_GET_PARAM_NAME(InputSetTrigger), InParams.OperatorSettings);
 
 
 			TDataReadReference<ValueType> TargetValue = InputData.GetOrCreateDefaultDataReadReference<ValueType>(METASOUND_GET_PARAM_NAME(InputTargetValue), InParams.OperatorSettings);
 
-			return MakeUnique<TChunrealValueOperator<ValueType>>(InParams.OperatorSettings, ChuckInstance, ParamName, SetTrigger, TargetValue);
+			return MakeUnique<TChunrealValueOperator<ValueType>>(InParams.OperatorSettings, ChuckInstance, ParamName, TargetValue);
 		}
 
 
-		TChunrealValueOperator(const FOperatorSettings& InSettings, const FChuckInstanceReadRef& InChuckInstance, FStringReadRef& InParamName, const FTriggerReadRef& InSetTrigger, const TDataReadReference<ValueType>& InTargetValue)
+		TChunrealValueOperator(const FOperatorSettings& InSettings, const FChuckInstanceReadRef& InChuckInstance, FStringReadRef& InParamName,  const TDataReadReference<ValueType>& InTargetValue)
 			: ChuckInstance(InChuckInstance)
 			, ParamName(InParamName)
-			, SetTrigger(InSetTrigger)
 			, TargetValue(InTargetValue)
 
 		{
@@ -338,7 +335,6 @@ namespace ChunrealMetasound
 			using namespace ValueVertexNames;
 			InOutVertexData.BindReadVertex(METASOUND_GET_PARAM_NAME(ChuckInstance), ChuckInstance);
 			InOutVertexData.BindReadVertex(METASOUND_GET_PARAM_NAME(ParamName), ParamName);
-			InOutVertexData.BindReadVertex(METASOUND_GET_PARAM_NAME(InputSetTrigger), SetTrigger);
 
 			InOutVertexData.BindReadVertex(METASOUND_GET_PARAM_NAME(InputTargetValue), TargetValue);
 		}
@@ -368,26 +364,6 @@ namespace ChunrealMetasound
 				ChuckInstance->GetProxy()->ChuckInstance->ChuckVm->globals()->broadcastGlobalEvent(TCHAR_TO_ANSI(TEXT("paramUpdate")));
 			}
 
-			SetTrigger->ExecuteBlock(
-				[&](int32 StartFrame, int32 EndFrame)
-				{
-				},
-				[this](int32 StartFrame, int32 EndFrame)
-				{
-				//	TriggerOnSet->TriggerFrame(StartFrame);
-				//if chuck instance is set and has a valid ChukRef, set output value to the value of the parameter
-					if (ChuckInstance->IsInitialized() && ChuckInstance->GetProxy()->ChuckInstance->ChuckVm != nullptr)
-					{
-						//TChunrealValue<ValueType>::SetValueToChuck(ChuckInstance->GetProxy()->ChuckInstance->ChuckVm, *ParamName, *TargetValue);
-						//ChuckInstance->GetProxy()->ChuckInstance->ChuckVm->globals()->broadcastGlobalEvent(TCHAR_TO_ANSI(TEXT("paramUpdate")));
-						
-					}
-					else
-					{
-							return;
-					}
-				}
-			);
 
 		}
 
@@ -402,7 +378,6 @@ namespace ChunrealMetasound
 
 		TDataReadReference<FChuckInstance> ChuckInstance;
 		TDataReadReference<FString> ParamName;
-		TDataReadReference<FTrigger> SetTrigger;
 		TDataReadReference<ValueType> TargetValue;
 		ValueType CurrentValue;
 		bool bInitialValueSet = false;
