@@ -7,10 +7,12 @@
 #include "IAudioProxyInitializer.h"
 #include "MetasoundDataTypeRegistrationMacro.h"
 #include "Chunreal.h"
+#include <unordered_map>
 //#include "Chunreal/chuck/chuck.h"
 #include "ChuckInstance.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnChuckNeedsRecompile);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FOnGlobalEventExecuted, FString, GlobalEventName);
 
 class UChuckInstantiation;
 
@@ -98,6 +100,9 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 {
 	GENERATED_BODY()
 
+
+	//static std::unordered_map<t_CKINT, FOnGlobalEventExecuted&> EventDelegates;
+
 	UChuckInstantiation()
 	{
 		// Must be created by a valid ChuckCode object
@@ -121,7 +126,19 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Chuck Instance Destroyed"));
+
 	}
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck", meta = (AutoCreateRefTerm = "InDelegate", Keywords = "Event, Quantization, DAW"))
+	void SubscribeToGlobalEvent(FString EventName, const FOnGlobalEventExecuted& InDelegate);
+
+	UFUNCTION(BlueprintAuthorityOnly, Category = "Chuck")
+	void ExecuteGlobalEvent(FString EventName) {
+		// I think we don't need to check if is valid... we'll see
+		ChuckVm->globals()->broadcastGlobalEvent(TCHAR_TO_ANSI(*EventName));
+
+	};
+
 	TArray<FAudioParameter> InputParameters;
 	TArray<FAudioParameter> OutputParameters;
 public:
@@ -134,19 +151,21 @@ public:
 		ChuckVm->init();
 		ChuckVm->start();
 
+
 		//CompileCode();
 	}
 
+
+
 	void CompileCode()
 	{
-		UE_LOG(LogTemp,Error, TEXT("Is this shit being called twice in a row???"))
 		
 		//is garbage?
 		if (!IsValid(this)) return; 
 		
 		if (ChuckVm == nullptr)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("ChuckVm is null"));
+		
 			CreateChuckVm();
 		}
 

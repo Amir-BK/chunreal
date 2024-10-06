@@ -16,6 +16,7 @@
 .004 => global float INC;
 // unit time (change interval)
 1::ms => dur T;
+global Event Test;
 
 // starting pitches (in MIDI note numbers, octaves apart)
 [ 12.0, 24, 36, 48, 60, 72, 84, 96, 108 ] @=> float pitches[];
@@ -42,7 +43,10 @@ while( true )
         // increment pitch
         INC +=> pitches[i];
         // wrap (for positive INC)
-        if( pitches[i] > 120 ) 108 -=> pitches[i];
+        if( pitches[i] > 120 ) {
+					 108 -=> pitches[i];
+					Test.broadcast();
+					}
         // wrap (for negative INC)
         else if( pitches[i] < 12 ) 108 +=> pitches[i];
     }

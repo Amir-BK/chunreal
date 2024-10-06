@@ -12,6 +12,12 @@ DEFINE_LOG_CATEGORY_STATIC(LogChuckInstance, VeryVerbose, All);
 DEFINE_METASOUND_DATA_TYPE(Metasound::FChuckProcessor, "ChucK Processor")
 DEFINE_METASOUND_DATA_TYPE(Metasound::FChuckInstance, "ChucK Instance")
 
+namespace ChunrealEventRegistry
+{
+	static TMap<t_CKINT, TTuple<FString, FOnGlobalEventExecuted>> EventDelegates;
+	static int EventIdCounter = 0;
+}
+
 inline TSharedPtr<Audio::IProxyData> UChuckCode::CreateProxyData(const Audio::FProxyDataInitParams& InitParams)
 {
 
@@ -63,6 +69,27 @@ ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 
 	return theChuck;
 }
+
+
+
+void UChuckInstantiation::SubscribeToGlobalEvent(FString EventName, const FOnGlobalEventExecuted& InDelegate) {
+	// I think we don't need to check if is valid... we'll see
+	t_CKINT EventID = ChunrealEventRegistry::EventIdCounter++;
+	auto EventCallBack = [](t_CKINT inEventID) {
+		//InDelegate.Execute(EventName);
+		UE_LOG(LogChuckInstance, VeryVerbose, TEXT("Event executed %d"), inEventID);
+		auto EventTuple = ChunrealEventRegistry::EventDelegates[inEventID];
+		EventTuple.Value.ExecuteIfBound(EventTuple.Key);
+		};
+
+	const char* EventNameChar = TCHAR_TO_ANSI(*EventName);
+	//add to global static map
+	auto EventTuple = TTuple<FString, FOnGlobalEventExecuted>(EventName, InDelegate);
+	ChunrealEventRegistry::EventDelegates.Add(TTuple<t_CKINT, TTuple<FString, FOnGlobalEventExecuted>>(EventID, EventTuple));
+
+	ChuckVm->globals()->listenForGlobalEvent(EventNameChar, EventID, (EventCallBack), (t_CKBOOL)(true));
+
+};
 
 UChuckInstantiation* UChuckCode::SpawnChuckInstance(int32 InSampleRate, int32 InNumChannels)
 {
