@@ -123,6 +123,13 @@ void UChuckCode::CompileChuckAsset(ChucK* chuckRef)
 	}
 }
 
+inline int32 UChuckInstantiation::OnGenerateAudio(float* OutAudio, int32 NumSamples) {
+	//so if we're here we must already have a chuck vm, I think? 
+	FChunrealModule::RunChuck(ChuckVm, nullptr, OutAudio, NumSamples);
+
+	return NumSamples;
+}
+
 TSharedPtr<Audio::IProxyData> UChuckInstantiation::CreateProxyData(const Audio::FProxyDataInitParams& InitParams)
 {
 	return MakeShared<FChuckInstanceProxy>(this);

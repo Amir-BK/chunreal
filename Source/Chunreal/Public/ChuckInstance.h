@@ -9,10 +9,129 @@
 #include "Chunreal.h"
 #include <unordered_map>
 //#include "Chunreal/chuck/chuck.h"
+#include "Sound/SoundGenerator.h"
+#include "Sound/SoundBase.h"
+#include "Components/SynthComponent.h"
 #include "ChuckInstance.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnChuckNeedsRecompile);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FOnGlobalEventExecuted, FString, GlobalEventName);
+
+namespace ChunrealMetasound
+{
+	template<typename ValueType>
+	struct TChunrealValue;
+
+
+	template<>
+	struct TChunrealValue<int32>
+	{
+		static int32 GetValueFromChuck(ChucK* ChuckRef, const FString& ParamName)
+		{
+			//UE_LOG(LogTemp, Warning, TEXT("Getting int value from Chuck"));
+
+			return ChuckRef->globals()->get_global_int_value(TCHAR_TO_ANSI(*ParamName));
+		}
+
+		static void SetValueToChuck(ChucK* ChuckRef, const FString& ParamName, int32 Value)
+		{
+			//UE_LOG(LogTemp, Warning, TEXT("Setting int value to Chuck"));
+			ChuckRef->globals()->setGlobalInt(TCHAR_TO_ANSI(*ParamName), Value);
+		}
+	};
+
+	template<>
+	struct TChunrealValue<float>
+	{
+		static float GetValueFromChuck(ChucK* ChuckRef, const FString& ParamName)
+		{
+			//UE_LOG(LogTemp, Warning, TEXT("Getting float value from Chuck"));
+			return ChuckRef->globals()->get_global_float_value(TCHAR_TO_ANSI(*ParamName));
+		}
+
+		static void SetValueToChuck(ChucK* ChuckRef, const FString& ParamName, float Value)
+		{
+			//UE_LOG(LogTemp, Warning, TEXT("Setting float value to Chuck"));
+			ChuckRef->globals()->setGlobalFloat(TCHAR_TO_ANSI(*ParamName), Value);
+		}
+	};
+
+	template<>
+	struct TChunrealValue<FString>
+	{
+		static FString GetValueFromChuck(ChucK* ChuckRef, const FString& ParamName)
+		{
+			const char* string = ChuckRef->globals()->get_global_string(TCHAR_TO_ANSI(*ParamName))->str().c_str();
+			return ANSI_TO_TCHAR(string);
+
+		}
+
+		static void SetValueToChuck(ChucK* ChuckRef, const FString& ParamName, const FString& Value)
+		{
+			ChuckRef->globals()->setGlobalString(TCHAR_TO_ANSI(*ParamName), TCHAR_TO_ANSI(*Value));
+		}
+	};
+
+	//array types
+	template<>
+	struct TChunrealValue<TArray<int32>>
+	{
+		static TArray<int32> GetValueFromChuck(ChucK* ChuckRef, const FString& ParamName)
+		{
+			t_CKUINT result = 0;
+			TArray<int32> Array;
+			Chuck_Object* CkArray = ChuckRef->globals()->get_global_array(TCHAR_TO_ANSI(*ParamName));
+			if (CkArray != NULL)
+			{
+				Chuck_ArrayInt* intArray = (Chuck_ArrayInt*)CkArray;
+				for (t_CKUINT i = 0; i < intArray->size(); i++)
+				{
+
+					intArray->get(i, &result);
+					Array.Add(result);
+				}
+			}
+
+			return Array;
+
+
+		}
+
+		static void SetValueToChuck(ChucK* ChuckRef, const FString& ParamName, const TArray<int32>& Value)
+		{
+			ChuckRef->globals()->setGlobalIntArray(TCHAR_TO_ANSI(*ParamName), (t_CKINT*)Value.GetData(), Value.Num());
+		}
+	};
+
+	template<>
+	struct TChunrealValue<TArray<float>>
+	{
+		static TArray<float> GetValueFromChuck(ChucK* ChuckRef, const FString& ParamName)
+		{
+			t_CKFLOAT result = 0;
+			TArray<float> Array;
+			Chuck_Object* CkArray = ChuckRef->globals()->get_global_array(TCHAR_TO_ANSI(*ParamName));
+			if (CkArray != NULL)
+			{
+				Chuck_ArrayFloat* floatArray = (Chuck_ArrayFloat*)CkArray;
+				for (t_CKUINT i = 0; i < floatArray->size(); i++)
+				{
+					floatArray->get(i, &result);
+					Array.Add(result);
+				}
+			}
+
+			return Array;
+		}
+
+		static void SetValueToChuck(ChucK* ChuckRef, const FString& ParamName, const TArray<float>& Value)
+		{
+
+			ChuckRef->globals()->setGlobalFloatArray(TCHAR_TO_ANSI(*ParamName), (double*)Value.GetData(), Value.Num());
+
+		}
+	};
+};
 
 class UChuckInstantiation;
 
@@ -95,13 +214,19 @@ public:
 
 //this should represent a live instance of a chuck vm, it is not meant to be shared by sound generators as this will corrupt the buffers
 //Differentiating between the two kind of objects lets us use Chucks as templates while also having access to their parameters, from metasound as well as BP and code.
+//this class allows communicating events to a chuck instance that produces audio (and data) inside a metasound
 UCLASS(BlueprintType, Transient, Within = ChuckCode)
 class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataFactory
 {
 	GENERATED_BODY()
 
+public:
 
-	//static std::unordered_map<t_CKINT, FOnGlobalEventExecuted&> EventDelegates;
+	// Called when synth is created
+	virtual bool Init(int32& SampleRate) { return true; }
+
+	// Called to generate more audio
+	virtual int32 OnGenerateAudio(float* OutAudio, int32 NumSamples); // override;
 
 	UChuckInstantiation()
 	{
@@ -110,7 +235,10 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 			ParentChuckCode = CastChecked<UChuckCode>(GetOuter());
 			ParentChuckCode->OnChuckNeedsRecompile.AddUObject(this, &UChuckInstantiation::OnChuckCodeAssetChanged);
 			CompileCode();
+			//bAutoActivate = true;
 		}
+
+		
 	}
 
 	~UChuckInstantiation()
@@ -128,7 +256,7 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 		UE_LOG(LogTemp, Warning, TEXT("Chuck Instance Destroyed"));
 
 	}
-
+public:
 	UFUNCTION(BlueprintCallable, Category = "Chuck", meta = (AutoCreateRefTerm = "InDelegate", Keywords = "Event, Quantization, DAW"))
 	void SubscribeToGlobalEvent(FString EventName, const FOnGlobalEventExecuted& InDelegate);
 
@@ -139,9 +267,65 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 
 	};
 
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	void SetGlobalFloat(FString ParamName, float Value) {
+		ChuckVm->globals()->setGlobalFloat(TCHAR_TO_ANSI(*ParamName), Value);
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	void SetGlobalInt(FString ParamName, int Value) {
+		ChuckVm->globals()->setGlobalInt(TCHAR_TO_ANSI(*ParamName), Value);
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	void SetGlobalString(FString ParamName, FString Value) {
+		ChuckVm->globals()->setGlobalString(TCHAR_TO_ANSI(*ParamName), TCHAR_TO_ANSI(*Value));
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	void SetGlobalFloatArray(FString ParamName, TArray<float> Value) {
+		ChuckVm->globals()->set_global_float_array(TCHAR_TO_ANSI(*ParamName), (double*) Value.GetData(), Value.Num());
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	void SetGlobalIntArray(FString ParamName, TArray<int32> Value) {
+		ChuckVm->globals()->set_global_int_array(TCHAR_TO_ANSI(*ParamName), (t_CKINT*)Value.GetData(), Value.Num());
+	};
+
+	
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	float GetGlobalFloat(FString ParamName) {
+		return ChunrealMetasound::TChunrealValue<float>::GetValueFromChuck(ChuckVm, ParamName);
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	int GetGlobalInt(FString ParamName) {
+		return ChunrealMetasound::TChunrealValue<int32>::GetValueFromChuck(ChuckVm, ParamName);
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	FString GetGlobalString(FString ParamName) {
+		return ChunrealMetasound::TChunrealValue<FString>::GetValueFromChuck(ChuckVm, ParamName);
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	TArray<float> GetGlobalFloatArray(FString ParamName) {
+		return ChunrealMetasound::TChunrealValue<TArray<float>>::GetValueFromChuck(ChuckVm, ParamName);
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	TArray<int32> GetGlobalIntArray(FString ParamName) {
+		return ChunrealMetasound::TChunrealValue<TArray<int32>>::GetValueFromChuck(ChuckVm, ParamName);
+	};
+
+	//virtual ISoundGeneratorPtr CreateSoundGenerator(const FSoundGeneratorInitParams& InParams) { return ISoundGeneratorPtr(this); }
+
+	//virtual int32 OnGenerateAudio(float* OutAudio, int32 NumSamples) override;
+
 	TArray<FAudioParameter> InputParameters;
 	TArray<FAudioParameter> OutputParameters;
-public:
+
 	// Inherited via IAudioProxyDataFactory
 	virtual TSharedPtr<Audio::IProxyData> CreateProxyData(const Audio::FProxyDataInitParams& InitParams) override;
 
