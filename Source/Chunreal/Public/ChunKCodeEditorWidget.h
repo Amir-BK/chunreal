@@ -67,7 +67,7 @@ public:
 		FString Code = GetCode().ToString();
 		UChuckCode* ChuckInstance = NewObject<UChuckCode>();
 		ChuckInstance->Code = Code;
-		ChuckInstance->ChuckGuid = FGuid::NewGuid();
+		//ChuckInstance->ChuckGuid = FGuid();
 		return ChuckInstance;
 	}
 	

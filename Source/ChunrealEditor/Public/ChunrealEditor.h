@@ -111,7 +111,7 @@ public:
 				ChuckProcessor = Cast<UChuckCode>(ChuckNewObject);
 				ChuckProcessor->bIsAutoManaged = true;
 				ChuckProcessor->SourcePath = WorkingDir + "/" + ChuckFile;
-				ChuckProcessor->ChuckGuid = FGuid::NewGuid();
+				//ChuckProcessor->ChuckGuid = FGuid::NewGuid();
 				AssetRegistryModule.Get().AssetCreated(ChuckProcessor);
 			}
 

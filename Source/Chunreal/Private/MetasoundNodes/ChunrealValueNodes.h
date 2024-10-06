@@ -235,9 +235,9 @@ namespace ChunrealMetasound
 		void Execute()
 		{
 			//if chuck instance is set and has a valid ChukRef, set output value to the value of the parameter
-			if (ChuckInstance->IsInitialized() && ChuckInstance->GetProxy()->ChuckInstance->ChuckInstance != nullptr)
+			if (ChuckInstance->IsInitialized() && ChuckInstance->GetProxy()->ChuckInstance->ChuckVm != nullptr)
 			{
-				*OutputValue = TChunrealValue<ValueType>::GetValueFromChuck(ChuckInstance->GetProxy()->ChuckInstance->ChuckInstance, *ParamName);
+				*OutputValue = TChunrealValue<ValueType>::GetValueFromChuck(ChuckInstance->GetProxy()->ChuckInstance->ChuckVm, *ParamName);
 			}
 			else
 			{
@@ -386,9 +386,9 @@ namespace ChunrealMetasound
 				{
 				//	TriggerOnSet->TriggerFrame(StartFrame);
 				//if chuck instance is set and has a valid ChukRef, set output value to the value of the parameter
-					if (ChuckInstance->IsInitialized() && ChuckInstance->GetProxy()->ChuckInstance->ChuckInstance != nullptr)
+					if (ChuckInstance->IsInitialized() && ChuckInstance->GetProxy()->ChuckInstance->ChuckVm != nullptr)
 					{
-						TChunrealValue<ValueType>::SetValueToChuck(ChuckInstance->GetProxy()->ChuckInstance->ChuckInstance, *ParamName, *TargetValue);
+						TChunrealValue<ValueType>::SetValueToChuck(ChuckInstance->GetProxy()->ChuckInstance->ChuckVm, *ParamName, *TargetValue);
 						UE_LOG(LogTemp, Warning, TEXT("Setting value to Chuck"));
 					}
 					else

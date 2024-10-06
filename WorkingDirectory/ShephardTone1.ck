@@ -4,7 +4,8 @@
 //
 // author: Ge Wang (https://ccrma.stanford.edu/~ge/)
 //   date: spring 2016
-
+// test
+//1233//
 // mean for normal intensity curve
 66 => float MU;
 // standard deviation for normal intensity curve

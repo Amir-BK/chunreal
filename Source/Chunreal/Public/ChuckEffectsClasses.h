@@ -41,6 +41,7 @@ class CHUNREAL_API FSubmixChuckEffect : public FSoundEffectSubmix
 	virtual void Init(const FSoundEffectSubmixInitData& InData) override
 	{
 		SampleRate = InData.SampleRate;
+		ChuckProcessor->OnChuckNeedsRecompile.AddRaw(this, &FSubmixChuckEffect::OnPresetChanged);
 	};
 	virtual void OnProcessAudio(const FSoundEffectSubmixInputData& InData, FSoundEffectSubmixOutputData& OutData) override
 	{
@@ -52,9 +53,6 @@ class CHUNREAL_API FSubmixChuckEffect : public FSoundEffectSubmix
 
 		//if guid has changed, recompile chuck by sending on preset changed
 
-		if (ChuckProcessor->ChuckGuid != CurrentChuckGuid) {
-			OnPresetChanged();
-		}
 
 
 		FChunrealModule::RunChuck(ChuckRef, InData.AudioBuffer->GetData(), OutData.AudioBuffer->GetData(), InData.NumFrames);
@@ -139,7 +137,9 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 	virtual void Init(const FSoundEffectSourceInitData& InitData) override
 	{
 		SampleRate = InitData.SampleRate;
+		ChuckProcessor->OnChuckNeedsRecompile.AddRaw(this, &FSourceEffectChuck::OnPresetChanged);
 	};
+
 
 	virtual void OnPresetChanged() override;
 
@@ -151,9 +151,6 @@ class CHUNREAL_API FSourceEffectChuck : public FSoundEffectSource
 			//OnPresetChanged();
 		}
 
-		if (ChuckProcessor->ChuckGuid != CurrentChuckGuid) {
-			OnPresetChanged();
-		}
 
 		//Process samples by ChucK
 		FChunrealModule::RunChuck(ChuckRef, InData.InputSourceEffectBufferPtr, OutAudioBufferData, InData.NumSamples / NumChannels);

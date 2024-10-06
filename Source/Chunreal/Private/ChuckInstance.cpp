@@ -30,16 +30,18 @@ bool UChuckCode::CompileChuckCode()
 	return false;
 }
 
-ChucK* UChuckCode::CreateChuckInstance(FString InstanceID, int32 InSampleRate, int32 InNumChannels)
+ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 {
 	ChucK* theChuck = new ChucK();
+	const auto PlatformAudioSettings = FAudioPlatformSettings::GetPlatformSettings(FPlatformProperties::GetRuntimeSettingsClassName());
+	const auto PlatformSampleRate = PlatformAudioSettings.SampleRate;
 	
 	//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Creating new chuck for asset: %s"));
 
 	theChuck = new ChucK();
 	theChuck->setLogLevel(2);
 	//Initialize Chuck params
-	theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, InSampleRate);
+	theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, PlatformSampleRate);
 	theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, InNumChannels);
 	theChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, InNumChannels);
 	theChuck->setParam(CHUCK_PARAM_VM_ADAPTIVE, 0);
@@ -64,18 +66,23 @@ ChucK* UChuckCode::CreateChuckInstance(FString InstanceID, int32 InSampleRate, i
 
 UChuckInstantiation* UChuckCode::SpawnChuckInstance(int32 InSampleRate, int32 InNumChannels)
 {
+	const auto PlatformAudioSettings = FAudioPlatformSettings::GetPlatformSettings(FPlatformProperties::GetRuntimeSettingsClassName());
+	const auto PlatformSampleRate = PlatformAudioSettings.SampleRate;
+	
 	auto* NewChuck = NewObject<UChuckInstantiation>(this);
-	NewChuck->ChuckInstance = CreateChuckInstance(FString(), InSampleRate, InNumChannels);
+	//NewChuck->CreateChuckVm(InNumChannels);
+	//NewChuck->ChuckVm = CreateChuckVm(InNumChannels);
 	//need to init
-	NewChuck->ChuckInstance->init();
-	NewChuck->ChuckInstance->start();
-	CompileChuckAsset(NewChuck->ChuckInstance);
+	//NewChuck->ChuckVm->init();
+	//NewChuck->ChuckVm->start();
+	//CompileChuckAsset(NewChuck->ChuckVm);
 	
 	return NewChuck;
 }
 
 void UChuckCode::CompileChuckAsset(ChucK* chuckRef)
 {
+	checkNoEntry();
 	if (bIsAutoManaged)
 	{
 		FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
@@ -95,7 +102,7 @@ TSharedPtr<Audio::IProxyData> UChuckInstantiation::CreateProxyData(const Audio::
 }
 
 inline TArray<FAudioParameter> UChuckInstantiation::GetAllGlobalOutputsFromChuck() {
-	check(ChuckInstance != nullptr);
+	check(ChuckVm != nullptr);
 	UE_LOG(LogChuckInstance, VeryVerbose, TEXT("Getting all global outputs from Chuck instance"));
 	TArray<FAudioParameter> Params;
 
@@ -112,7 +119,7 @@ inline TArray<FAudioParameter> UChuckInstantiation::GetAllGlobalOutputsFromChuck
 	// Call the getAllGlobalVariables method
 	void* data = new long;
 	
-	ChuckInstance->globals()->getAllGlobalVariables(MyCallbackFunction, data);
+	ChuckVm->globals()->getAllGlobalVariables(MyCallbackFunction, data);
 
 	delete static_cast<int*>(data);
 

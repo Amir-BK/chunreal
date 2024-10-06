@@ -191,7 +191,7 @@ namespace ChunrealMetasounds::ChuckCompiler
 		void Reset(const FResetParams&)
 		{
 			//nullify the chuck pointer so that we can receive a new chuck instance
-			delete theChuck;
+			//delete theChuck;
 			theChuck = nullptr;
 			ChuckID = FString();
 
@@ -201,11 +201,18 @@ namespace ChunrealMetasounds::ChuckCompiler
 		//destructor
 		virtual ~ChunrealMetasoundMidiOperator()
 		{
-			UE_LOG(LogChuckCompilerNode, VeryVerbose, TEXT("Chuck Midi Synth Node Destructor"));
+			UE_LOG(LogChuckCompilerNode, VeryVerbose, TEXT("Chuck Compiler Node Destructor"));
 
+			if (bIsProxySet)
+			{
+				//delete the chuck instance
+				//delete theChuck;
+				//theChuck = nullptr;
+				ChuckInstance->MarkAsGarbage();
+			}
 
 			//Delete ChucK
-			delete theChuck;
+			//delete theChuck;
 			theChuck = nullptr;
 
 		}
@@ -261,23 +268,12 @@ namespace ChunrealMetasounds::ChuckCompiler
 			{
 				auto Proxy = Inputs.ChuckInstance->GetProxy();
 				//if we have a chuck code asset, compile it and create a chuck instance
-				auto* NewInstantiation = Proxy->ChuckProcessor->SpawnChuckInstance(SampleRate, 2);
+				ChuckInstance = Proxy->ChuckProcessor->SpawnChuckInstance(SampleRate, 2);
 				Audio::FProxyDataInitParams InitParams;
-				auto NewProxy = FChuckInstance(NewInstantiation->CreateProxyData(InitParams));
+				auto NewProxy = FChuckInstance(ChuckInstance->CreateProxyData(InitParams));
 				//NewProxy.ChuckInstance = NewInstantiation;
 				Outputs.ChuckInstanceOut->operator=(NewProxy);
 
-
-				if (hasSporkedOnce)
-				{
-					Chuck_Msg* msg = new Chuck_Msg;
-					msg->type = 3;  //MSG_REMOVEALL
-					theChuck->vm()->process_msg(msg);
-				}
-				else
-				{
-					hasSporkedOnce = true;
-				}
 
 
 
@@ -374,6 +370,7 @@ namespace ChunrealMetasounds::ChuckCompiler
 			bool hasSporkedOnce = false;
 
 			UChuckCode* ChuckProcessor = nullptr;
+			UChuckInstantiation* ChuckInstance = nullptr;
 			FGuid CurrentChuckGuid;
 
 	

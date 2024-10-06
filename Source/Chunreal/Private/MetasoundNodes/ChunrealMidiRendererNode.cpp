@@ -249,7 +249,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			delete outBufferInterleaved;
 
 			//Delete ChucK
-			delete theChuck;
+			//delete theChuck;
 			theChuck = nullptr;
 
 		}
@@ -319,15 +319,12 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			}
 
 			//get proxy 
-			if (ChuckInstance.GetProxy()->ChuckInstance->ChuckInstance != nullptr)
+			if (ChuckInstance.GetProxy()->ChuckInstance->ChuckVm != nullptr)
 			{
 				//we have a new chuck instance (or the source file has been changed), we can now reinitialize the chuck
-				theChuck = ChuckInstance.GetProxy()->ChuckInstance->ChuckInstance;
+				
 
-				if (theChuck == nullptr)
-				{
-					//theChuck = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate);
-				}
+
 
 				
 				if (bufferInitialized)
@@ -360,6 +357,21 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				CurrentTrackNumber = *Inputs.TrackIndex;
 				CurrentChannelNumber = *Inputs.ChannelIndex;
 
+			}
+
+			theChuck = ChuckInstance.GetProxy()->ChuckInstance->ChuckVm;
+			if (ChuckInstance.GetProxy()->ChuckInstance->ChuckVm == nullptr)
+			{
+				//theChuck = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate);
+				UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck VM is null"));
+
+				if (bufferInitialized)
+				{
+					delete inBufferInterleaved;
+					delete outBufferInterleaved;
+					bufferInitialized = false;
+				}
+				return;
 			}
 
 
@@ -448,7 +460,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			}
 
 			//Process samples by ChucK
-			FChunrealModule::RunChuck(theChuck, (float*)inBufferInterleaved, outBufferInterleaved, BlockSizeFrames);
+			FChunrealModule::RunChuck(ChuckInstance.GetProxy()->ChuckInstance->ChuckVm, (float*)inBufferInterleaved, outBufferInterleaved, BlockSizeFrames);
 
 			//Retrive each output channel and apply volume multiplier
 			for (int i = 0; i < BlockSizeFrames; i++)

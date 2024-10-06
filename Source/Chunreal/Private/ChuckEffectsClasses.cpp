@@ -11,7 +11,7 @@ inline void FSourceEffectChuck::OnPresetChanged()
 		ChuckProcessor = Settings.ChuckInstance;
 		if (IsValid(ChuckProcessor))
 		{
-			ChuckRef = ChuckProcessor->CreateChuckInstance(FString(), SampleRate, NumChannels);
+			ChuckRef = ChuckProcessor->CreateChuckVm(NumChannels);
 			ChuckRef->init();
 			ChuckRef->start();
 		}
@@ -23,8 +23,8 @@ inline void FSourceEffectChuck::OnPresetChanged()
 		//if our GUID has changed, we need to recompile the chuck
 	
 
-		if (CurrentChuckGuid != Settings.ChuckInstance->ChuckGuid)
-		{
+		///if (CurrentChuckGuid != Settings.ChuckInstance->ChuckGuid)
+		//{
 			if (bHasSporkedOnce)
 			{
 				Chuck_Msg* msg = new Chuck_Msg;
@@ -36,11 +36,11 @@ inline void FSourceEffectChuck::OnPresetChanged()
 				bHasSporkedOnce = true;
 			}
 			
-			CurrentChuckGuid = Settings.ChuckInstance->ChuckGuid;
+			//CurrentChuckGuid = Settings.ChuckInstance->ChuckGuid;
 			ChuckProcessor->CompileChuckAsset(ChuckRef);
 			bFirstFrameForChuck = true;
 			//we should be good to go now, we'll deal with the parameters later, in theory we shouldn't recompile the chuck if the parameters change, only if the Guid does.
-		}
+		//}
 		//if (bFirstFrameForChuck) return;
 		bool bHasParams = Settings.Params.Num() > 0;
 		if (!bHasParams) return;
@@ -89,7 +89,7 @@ void FSubmixChuckEffect::OnPresetChanged()
 			ChuckProcessor = Settings.ChuckInstance;
 			if (IsValid(ChuckProcessor))
 			{
-				ChuckRef = ChuckProcessor->CreateChuckInstance(FString(), SampleRate, NumChannels);
+				ChuckRef = ChuckProcessor->CreateChuckVm(NumChannels);
 				ChuckRef->init();
 				ChuckRef->start();
 			}
@@ -100,8 +100,8 @@ void FSubmixChuckEffect::OnPresetChanged()
 	{
 		
 		//if our GUID has changed, we need to recompile the chuck
-		if (CurrentChuckGuid != Settings.ChuckInstance->ChuckGuid)
-		{
+	//	if (CurrentChuckGuid != Settings.ChuckInstance->ChuckGuid)
+	//	{
 			if (bHasSporkedOnce)
 			{
 				Chuck_Msg* msg = new Chuck_Msg;
@@ -113,13 +113,13 @@ void FSubmixChuckEffect::OnPresetChanged()
 				bHasSporkedOnce = true;
 			}
 
-			CurrentChuckGuid = Settings.ChuckInstance->ChuckGuid;
+		//	CurrentChuckGuid = Settings.ChuckInstance->ChuckGuid;
 			ChuckProcessor->CompileChuckAsset(ChuckRef);
 			bFirstFrameForChuck = true;
 
 
 			//we should be good to go now, we'll deal with the parameters later, in theory we shouldn't recompile the chuck if the parameters change, only if the Guid does.
-		}
+	//	}
 
 		if (bFirstFrameForChuck) return;
 		

@@ -92,7 +92,7 @@ fun float estimatePitch()
 Math.random2f( 230.0, 660.0 ) => f1.freq;
 Math.random2f( 800.0, 2300.0 ) => f2.freq;
 Math.random2f( 1700.0, 3000.0 ) => f3.freq;
-
+//
 // variables for interpolating current and target formant frequencies
 400.0 => float f1freq;
 1000.0 => float f2freq;
@@ -106,7 +106,7 @@ Math.random2f( 1700.0, 3000.0 ) => f3.freq;
 1.0 => p.gain;
 
 // variables that control impulse train source
-0.013 => float period;
+0.015 => float period;
 0.013 => float targetPeriod;
 0.0 => float modphase;
 0.0001 => global float vibratoDepth;

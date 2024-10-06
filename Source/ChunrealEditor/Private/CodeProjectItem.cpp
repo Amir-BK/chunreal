@@ -71,7 +71,7 @@ void UCodeProjectItem::HandleDirectoryScanned(const FString& InPathName, ECodePr
 
 			// @TODO: now register for any changes to this directory if needed
 			FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::Get().LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-			DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(InPathName, IDirectoryWatcher::FDirectoryChanged::CreateUObject(NewItem, &UCodeProjectItem::HandleDirectoryChanged), OnDirectoryChangedHandle);
+			//DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(InPathName, IDirectoryWatcher::FDirectoryChanged::CreateUObject(NewItem, &UCodeProjectItem::HandleDirectoryChanged), OnDirectoryChangedHandle);
 		}
 	}
 }
@@ -79,9 +79,17 @@ void UCodeProjectItem::HandleDirectoryScanned(const FString& InPathName, ECodePr
 void UCodeProjectItem::HandleDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
 {
 	// @TODO: dynamical update directory watchers so we can update the view in real-time
+	TArray<FString> ScannedFiles; //I don't understand why but this can contain two modifications for a file... we don't want that.
 	for(const auto& Change : FileChanges)
 	{
 		UE_LOG(LogTemp, Log, TEXT("File change: %s"), *Change.Filename);
+		if (ScannedFiles.Contains(Change.Filename))
+		{
+			continue;
+		}
+
+		ScannedFiles.Add(Change.Filename);
+
 		switch(Change.Action)
 		{
 		default:
@@ -104,9 +112,10 @@ void UCodeProjectItem::HandleDirectoryChanged(const TArray<FFileChangeData>& Fil
 				auto* ChuckProcessor = FChunrealEditor::GetProcessorProxyForChuck(Change.Filename);
 				if (ChuckProcessor)
 				{
-					FGuid OldGuid = ChuckProcessor->ChuckGuid;
-					ChuckProcessor->ChuckGuid = FGuid::NewGuid();
-					UE_LOG(LogTemp, Log, TEXT("Chuck file: %s, has been modified. Old Guid: %s, New Guid: %s"), *Change.Filename, *OldGuid.ToString(), *ChuckProcessor->ChuckGuid.ToString());
+					//FGuid OldGuid = ChuckProcessor->ChuckGuid;
+					//ChuckProcessor->ChuckGuid = FGuid::NewGuid();
+					ChuckProcessor->OnChuckNeedsRecompile.Broadcast();
+				//	UE_LOG(LogTemp, Log, TEXT("Chuck file: %s, has been modified. Old Guid: %s, New Guid: %s"), *Change.Filename, *OldGuid.ToString(), *ChuckProcessor->ChuckGuid.ToString());
 				}
 			}
 			}
