@@ -241,7 +241,6 @@ namespace ChunrealMetasound
 			}
 			else
 			{
-				//UE_LOG(LogTemp, Warning, TEXT("Chuck instance not initialized"));
 				return;
 			}
 			
@@ -354,29 +353,20 @@ namespace ChunrealMetasound
 
 		void Execute()
 		{
-//			TriggerOnReset->AdvanceBlock();
-		//	TriggerOnSet->AdvanceBlock();
-
-			//if (*ResetTrigger)
+			if (!bInitialValueSet)
 			{
-				//*OutputValue = *InitValue;
+				CurrentValue = *TargetValue;
+				TChunrealValue<ValueType>::SetValueToChuck(ChuckInstance->GetProxy()->ChuckInstance->ChuckVm, *ParamName, *TargetValue);
+				ChuckInstance->GetProxy()->ChuckInstance->ChuckVm->globals()->broadcastGlobalEvent(TCHAR_TO_ANSI(TEXT("paramUpdate")));
+				bInitialValueSet = true;
 			}
 
-			//if (*SetTrigger)
-			//{
-
-			//	//*OutputValue = *TargetValue;
-			//}
-
-			//ResetTrigger->ExecuteBlock(
-			//	[&](int32 StartFrame, int32 EndFrame)
-			//	{
-			//	},
-			//	[this](int32 StartFrame, int32 EndFrame)
-			//	{
-			//		TriggerOnReset->TriggerFrame(StartFrame);
-			//	}
-			//);
+			if (CurrentValue != *TargetValue)
+			{
+				CurrentValue = *TargetValue;
+				TChunrealValue<ValueType>::SetValueToChuck(ChuckInstance->GetProxy()->ChuckInstance->ChuckVm, *ParamName, *TargetValue);
+				ChuckInstance->GetProxy()->ChuckInstance->ChuckVm->globals()->broadcastGlobalEvent(TCHAR_TO_ANSI(TEXT("paramUpdate")));
+			}
 
 			SetTrigger->ExecuteBlock(
 				[&](int32 StartFrame, int32 EndFrame)
@@ -388,14 +378,13 @@ namespace ChunrealMetasound
 				//if chuck instance is set and has a valid ChukRef, set output value to the value of the parameter
 					if (ChuckInstance->IsInitialized() && ChuckInstance->GetProxy()->ChuckInstance->ChuckVm != nullptr)
 					{
-						TChunrealValue<ValueType>::SetValueToChuck(ChuckInstance->GetProxy()->ChuckInstance->ChuckVm, *ParamName, *TargetValue);
-						ChuckInstance->GetProxy()->ChuckInstance->ChuckVm->globals()->broadcastGlobalEvent(TCHAR_TO_ANSI(TEXT("paramUpdate")));
-						UE_LOG(LogTemp, Warning, TEXT("Setting value to Chuck"));
+						//TChunrealValue<ValueType>::SetValueToChuck(ChuckInstance->GetProxy()->ChuckInstance->ChuckVm, *ParamName, *TargetValue);
+						//ChuckInstance->GetProxy()->ChuckInstance->ChuckVm->globals()->broadcastGlobalEvent(TCHAR_TO_ANSI(TEXT("paramUpdate")));
+						
 					}
 					else
 					{
-						UE_LOG(LogTemp, Warning, TEXT("Chuck instance not initialized"));
-						return;
+							return;
 					}
 				}
 			);
@@ -415,6 +404,9 @@ namespace ChunrealMetasound
 		TDataReadReference<FString> ParamName;
 		TDataReadReference<FTrigger> SetTrigger;
 		TDataReadReference<ValueType> TargetValue;
+		ValueType CurrentValue;
+		bool bInitialValueSet = false;
+
 		//TDataWriteReference<ValueType> OutputValue;
 
 	};
