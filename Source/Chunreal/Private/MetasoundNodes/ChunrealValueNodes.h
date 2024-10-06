@@ -389,6 +389,7 @@ namespace ChunrealMetasound
 					if (ChuckInstance->IsInitialized() && ChuckInstance->GetProxy()->ChuckInstance->ChuckVm != nullptr)
 					{
 						TChunrealValue<ValueType>::SetValueToChuck(ChuckInstance->GetProxy()->ChuckInstance->ChuckVm, *ParamName, *TargetValue);
+						ChuckInstance->GetProxy()->ChuckInstance->ChuckVm->globals()->broadcastGlobalEvent(TCHAR_TO_ANSI(TEXT("paramUpdate")));
 						UE_LOG(LogTemp, Warning, TEXT("Setting value to Chuck"));
 					}
 					else

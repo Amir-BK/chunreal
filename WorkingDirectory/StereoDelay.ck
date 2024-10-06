@@ -11,7 +11,7 @@ global float DelayTime;
 global Event paramUpdate;
 Event Test;
 
-0.8 => float FeedbackGain ;
+0.8 => global float FeedbackGain ;
 // set feedback
 FeedbackGain => feedbackL.gain;
 FeedbackGain => feedbackR.gain;
