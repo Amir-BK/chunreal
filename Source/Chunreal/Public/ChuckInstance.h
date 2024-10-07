@@ -162,7 +162,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Chuck", meta = (MultiLine = true, ExposeOnSpawn = true))
 	FString Code;
 
-	//spawn chuck with optional instance ID for registration with the module, we'll see about destroying it later
+	//spawn chuck vm, should probably be in the instantiation class rather than code class 
 	ChucK* CreateChuckVm(int32 InNumChannels = 2);
 
 	UFUNCTION(BlueprintCallable, Category = "ChucK")
@@ -176,6 +176,8 @@ public:
 
 
 private:
+
+	//none of these are used 
 	ChucK* Chuck = nullptr;
 
 	bool bChuckCompiled = false;
@@ -204,9 +206,68 @@ public:
 
 };
 
+//so lazy so let's add the Chuck Synth Component here
+UCLASS(ClassGroup = Synth, meta = (BlueprintSpawnableComponent))
+class CHUNREAL_API UChuckSynthComponent : public USynthComponent
+{
+	GENERATED_BODY()
+
+public:
+	//this just needs init and on generate audio
+	ChucK* ChuckVm = nullptr;
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	void InitWithChuckInstance(UChuckInstantiation* InChuckInstance);
+
+	//in theory we may want to actual call the chuck init from here, but we'll see, this object must have a chuck to process so if no chuck return false?
+	virtual bool Init(int32& SampleRate) override {
+		NumChannels = 2;
+		if (ChuckVm) return true;
+
+		return false;
+	};
+
+	virtual int32 OnGenerateAudio(float* OutAudio, int32 NumSamples) override {
+		//we assume chuck vm exists here
+		
+		if (!bBuffersInitialized)
+		{
+			//this hard coding to stereo ain't great, we know the number of channels and can support multi channel if we want.
+			DummyInputBuffer = new float[NumSamples];
+			bBuffersInitialized = true;
+		}
+		 
+		//will probably crash right away if we destroy the underlying instance, maybe we can create a delegate for that
+		// in metasounds we usually use the 'BlockFrameSize' which refersto one channel, here we receive num samples, which is for all channels, ergo, divide by numchannels.
+		FChunrealModule::RunChuck(ChuckVm, DummyInputBuffer, OutAudio, NumSamples / 2);
+
+		return NumSamples;
+	};
+
+	~UChuckSynthComponent()
+	{
+		//no need to clear chuck VM cause it isn't 'owned' by this class, but we do need to delete the dummy buffer
+		if (bBuffersInitialized)
+		{
+			delete DummyInputBuffer;
+		}
+	}
+
+private:
+	bool bBuffersInitialized = false;
+
+	//for now dummy buffer but in theory we can also receive audio busses, or the microphone, or whatever.
+	float* DummyInputBuffer = nullptr;
+
+
+
+};
+
 //this should represent a live instance of a chuck vm, it is not meant to be shared by sound generators as this will corrupt the buffers
 //Differentiating between the two kind of objects lets us use Chucks as templates while also having access to their parameters, from metasound as well as BP and code.
 //this class allows communicating events to a chuck instance that produces audio (and data) inside a metasound
+// while you can pull data and events from this class anywhere you should only connect it to one sound producer, in fact it must be connected to one to work
+// if you need a chuck instance that doesn't produce audio just output the chuck audio to a "blackhole" or something.
 UCLASS(BlueprintType, Transient, Within = ChuckCode)
 class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataFactory
 {
@@ -215,35 +276,18 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 public:
 
 	
-	UChuckInstantiation()
-	{
-		// Must be created by a valid ChuckCode object
-		if (!IsTemplate()) {
-			ParentChuckCode = CastChecked<UChuckCode>(GetOuter());
-			ParentChuckCode->OnChuckNeedsRecompile.AddUObject(this, &UChuckInstantiation::OnChuckCodeAssetChanged);
-			CompileCode();
-			//bAutoActivate = true;
-		}
+	UChuckInstantiation();
 
-		
-	}
-
-	~UChuckInstantiation()
-	{
-		if (ChuckVm)
-		{
-			delete ChuckVm;
-		}
-
-		if (IsValid(ParentChuckCode))
-		{
-			ParentChuckCode->OnChuckNeedsRecompile.RemoveAll(this);
-		}
-
-		UE_LOG(LogTemp, Warning, TEXT("Chuck Instance Destroyed"));
-
-	}
+	~UChuckInstantiation();
 public:
+
+	UFUNCTION(BlueprintCallable, Category = "Chuck")
+	UChuckSynthComponent* SpawnChuckSynthComponent() {
+		UE_LOG(LogTemp, Warning, TEXT("Spawning Chuck Synth Component"));
+		UChuckSynthComponent* ChuckSynthComponent = NewObject<UChuckSynthComponent>(this, NAME_None, RF_Transient);
+		ChuckSynthComponent->ChuckVm = ChuckVm;
+		return ChuckSynthComponent;
+	};
 
 	//subscribe to a global event executed by the chuck VM, returns the event ID that can be used for unsubscribing
 	UFUNCTION(BlueprintCallable, Category = "Chuck", meta = (AutoCreateRefTerm = "InDelegate", Keywords = "Event, Quantization, DAW"))
@@ -467,3 +511,5 @@ namespace Metasound
 	DECLARE_METASOUND_DATA_REFERENCE_TYPES(FChuckInstance, CHUNREAL_API, FChuckInstanceTypeInfo, FChuckInstanceReadRef, FChuckInstanceWriteRef)
 	
 }
+
+

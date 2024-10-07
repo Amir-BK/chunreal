@@ -62,6 +62,36 @@ ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 }
 
 
+inline UChuckInstantiation::UChuckInstantiation()
+{
+	// Must be created by a valid ChuckCode object
+	if (!IsTemplate()) {
+		UE_LOG(LogTemp, Warning, TEXT("Chuck Instance Created"));
+		ParentChuckCode = CastChecked<UChuckCode>(GetOuter());
+		ParentChuckCode->OnChuckNeedsRecompile.AddUObject(this, &UChuckInstantiation::OnChuckCodeAssetChanged);
+		CompileCode();
+		//bAutoActivate = true;
+	}
+
+
+}
+
+inline UChuckInstantiation::~UChuckInstantiation()
+{
+	if (ChuckVm)
+	{
+		delete ChuckVm;
+	}
+
+	if (IsValid(ParentChuckCode))
+	{
+		ParentChuckCode->OnChuckNeedsRecompile.RemoveAll(this);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Chuck Instance Destroyed"));
+
+}
+
 int UChuckInstantiation::SubscribeToGlobalEvent(FString EventName, const FOnGlobalEventExecuted& InDelegate) {
 	// I think we don't need to check if is valid... we'll see
 	t_CKINT EventID = ChunrealEventRegistry::EventIdCounter++;
@@ -133,3 +163,9 @@ TSharedPtr<Audio::IProxyData> UChuckInstantiation::CreateProxyData(const Audio::
 	return MakeShared<FChuckInstanceProxy>(this);
 }
 
+void UChuckSynthComponent::InitWithChuckInstance(UChuckInstantiation* InChuckInstance)
+{
+
+	ChuckVm = InChuckInstance->ChuckVm;
+
+}
