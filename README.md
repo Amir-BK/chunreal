@@ -45,6 +45,8 @@ The ChunrealEditor module monitors the working directory (inside the plugin fold
 
 At the moment (a matter of days if not hours) it is the 'Chuck Project Editor' that monitors the directory rather than the module itself, the plan is not to have any dependencies on Editor Only functionality so that these chuck sources can also potentially be exposed and modified in packaged games at runtime.
 
+This system also allows keeping the .ck files as source files outside unreal, for more easily working with revision control, right now the Chuck working directory is set to a directory inside the plugin folder, it can be changed in code, eventually I'll expose it in the project settings. 
+
 ### Manual creation (to be redesigned - Section oudated)
 
 Instead of assigning the code via blueprints there's a new 'Chuck Processor' asset that can be created via the content browser - 
