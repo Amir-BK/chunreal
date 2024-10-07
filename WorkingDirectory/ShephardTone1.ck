@@ -17,6 +17,7 @@
 // unit time (change interval)
 1::ms => dur T;
 global Event Test;
+global Event TestSend;
 
 // starting pitches (in MIDI note numbers, octaves apart)
 [ 12.0, 24, 36, 48, 60, 72, 84, 96, 108 ] @=> float pitches[];
@@ -28,6 +29,18 @@ TriOsc tones[N];
 Gain gain => dac; 1.0/N => gain.gain;
 // connect to dac
 for( int i; i < N; i++ ) { tones[i] => gain; }
+
+fun void EventListener(Event event)
+{
+	while(true)
+	{
+			event=> now;
+			<<< "Received the trigger in chuck!" >>>;
+	}
+}
+
+//create shread for event listener
+spork ~ EventListener(TestSend);
 
 // infinite time loop
 while( true )
@@ -52,5 +65,8 @@ while( true )
     }
     
     // advance time
+
     T => now;
 }
+
+

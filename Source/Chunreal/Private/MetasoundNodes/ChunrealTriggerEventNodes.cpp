@@ -23,7 +23,7 @@ namespace ChunrealMetasounds::ChuckEventNodes
 
 	namespace Inputs
 	{
-		METASOUND_PARAM(Trigger, "Trigger", "Trigger to translate to a chuck event.");
+		METASOUND_PARAM(TriggerEvent, "Trigger", "Trigger to translate to a chuck event.");
 		METASOUND_PARAM(ChuckEvent, "Chuck Event", "Chuck event to translate to a trigger.");
 		METASOUND_PARAM(ChuckInstance, "Chuck Instance", "Chuck instance to use for the chuck event.");
 	}
@@ -168,6 +168,7 @@ namespace ChunrealMetasounds::ChuckEventNodes
 			InOutVertexData.BindWriteVertex(METASOUND_GET_PARAM_NAME(OnChuckEvent), OnChuckEvent);
 		}
 
+		//@TODO cleanup and de-registration of events 
 		virtual void Execute()
 		{
 			using namespace Inputs;
@@ -235,9 +236,124 @@ namespace ChunrealMetasounds::ChuckEventNodes
 		int CurrentEventID = INDEX_NONE;
 		bool bShouldExecuteTriggerInBlock = false;
 
-}; //End of FChuckEventToTriggerOperator
+	}; //End of FChuckEventToTriggerOperator
+
+	class FTriggerToChuckEventOperator : public TExecutableOperator<FTriggerToChuckEventOperator>
+	{
+
+	public:
+
+		static const FVertexInterface& GetDefaultInterface()
+		{
+
+			using namespace Inputs;
+			using namespace Outputs;
+
+			static const FVertexInterface DefaultInterface(
+				FInputVertexInterface(
+					TInputDataVertex<FChuckInstance>(METASOUND_GET_PARAM_NAME_AND_METADATA(ChuckInstance)),
+					TInputDataVertex<FString>(METASOUND_GET_PARAM_NAME_AND_METADATA(ChuckEvent)),
+					TInputDataVertex<FTrigger>(METASOUND_GET_PARAM_NAME_AND_METADATA(TriggerEvent))
+				),
+				FOutputVertexInterface()
+			);
+
+			return DefaultInterface;
+		}
 
 
+
+		static const FNodeClassMetadata& GetNodeInfo()
+		{
+			auto CreateNodeClassMetadata = []() -> FNodeClassMetadata
+				{
+					FNodeClassMetadata Info;
+					Info.ClassName = GetTriggerToEventNodeName();
+					Info.MajorVersion = GetCurrentMajorVersion();
+					Info.MinorVersion = GetCurrentMinorVersion();
+					Info.DisplayName = LOCTEXT("TriggerToChuckEventDisplayName", "Trigger to Chuck Event");
+					Info.Description = LOCTEXT("TriggerToChuckEventDescription", "Translates a trigger to a chuck event.");
+					Info.DefaultInterface = GetDefaultInterface();
+					Info.Author = TEXT("Amir Ben-Kiki");
+					Info.PromptIfMissing = PluginNodeMissingPrompt;
+					Info.CategoryHierarchy = { INVTEXT("Chunreal") };
+					return Info;
+				};
+
+			static const FNodeClassMetadata Metadata = CreateNodeClassMetadata();
+			return Metadata;
+		};
+
+		struct FInputs
+		{
+			FChuckInstanceReadRef ChuckInstance;
+			FStringReadRef ChuckEvent;
+			FTriggerReadRef TriggerEvent;
+		};
+
+		// no outputs
+
+		static TUniquePtr<IOperator> CreateOperator(const FBuildOperatorParams& InParams, FBuildResults& OutResults)
+		{
+			using namespace Inputs;
+			using namespace Outputs;
+
+			const FInputVertexInterfaceData& InputData = InParams.InputData;
+
+			FInputs Inputs{
+				InputData.GetOrCreateDefaultDataReadReference<FChuckInstance>(METASOUND_GET_PARAM_NAME(ChuckInstance), InParams.OperatorSettings),
+				InputData.GetOrCreateDefaultDataReadReference<FString>(METASOUND_GET_PARAM_NAME(ChuckEvent), InParams.OperatorSettings),
+				InputData.GetOrCreateDefaultDataReadReference<FTrigger>(METASOUND_GET_PARAM_NAME(TriggerEvent), InParams.OperatorSettings)
+			};
+
+			return MakeUnique<FTriggerToChuckEventOperator>(InParams, MoveTemp(Inputs));
+		}
+
+		FTriggerToChuckEventOperator(const FBuildOperatorParams& InParams, FInputs&& InInputs)
+			: Inputs(MoveTemp(InInputs))
+		{
+		}
+
+		virtual void BindInputs(FInputVertexInterfaceData& InOutVertexData) override
+		{
+			using namespace Inputs;
+			InOutVertexData.BindReadVertex(METASOUND_GET_PARAM_NAME(ChuckInstance), Inputs.ChuckInstance);
+			InOutVertexData.BindReadVertex(METASOUND_GET_PARAM_NAME(ChuckEvent), Inputs.ChuckEvent);
+			InOutVertexData.BindReadVertex(METASOUND_GET_PARAM_NAME(TriggerEvent), Inputs.TriggerEvent);
+		}
+
+		virtual void BindOutputs(FOutputVertexInterfaceData& InOutVertexData) override
+		{
+			// no outputs
+		}
+
+		virtual void Execute()
+		{
+		
+			//is chuck instance proxy valid?
+			if (!Inputs.ChuckInstance->IsInitialized())
+			{
+				return;
+			}
+
+			//get chuck instance from proxy
+			UChuckInstantiation* ChuckInstance = Inputs.ChuckInstance->GetProxy()->ChuckInstance;
+
+			//get chuck event name
+			FString ChuckEventName = *Inputs.ChuckEvent;
+
+			//get trigger event
+			FTrigger TriggerEvent = *Inputs.TriggerEvent;
+
+			//if the trigger is active, send the chuck event
+			if (TriggerEvent.IsTriggeredInBlock())
+			{
+				ChuckInstance->ExecuteGlobalEvent(ChuckEventName);
+			}
+		}
+
+		FInputs Inputs;
+	};
 
 	class FChuckEventToTriggerNode final : public FNodeFacade
 
@@ -251,7 +367,20 @@ namespace ChunrealMetasounds::ChuckEventNodes
 		virtual ~FChuckEventToTriggerNode() = default;
 
 	};
-
+	
 	METASOUND_REGISTER_NODE(FChuckEventToTriggerNode);
+
+	class FTriggerToChuckEventNode final : public FNodeFacade
+	{
+	public:
+		explicit FTriggerToChuckEventNode(const FNodeInitData& InInitData)
+			: FNodeFacade(InInitData.InstanceName, InInitData.InstanceID, TFacadeOperatorClass<FTriggerToChuckEventOperator>())
+		{
+		}
+
+		virtual ~FTriggerToChuckEventNode() = default;
+	};
+
+	METASOUND_REGISTER_NODE(FTriggerToChuckEventNode);
 
 };
