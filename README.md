@@ -36,7 +36,7 @@ The end result should be reusable chuck assets that can be used inside metasound
 
 ## New workflow!
 
-The information in the below section is out dated, I split the Chuck asset into two asset types, one is UChuckCode which represents a block of chuck code, either as a proxy to a file on disk (automatically created via the editor module) or just a text block, this asset can spawn a transient UChuckInstantiation object which is compiled upon its creation, the UChuckInstantiation actually owns the ChucK vm pointer and is used to render audio, there are BP methods that compile a UChuckCode to a UChuckInstantiation as well as a metasound node that does the same thing, thus allowing the user to create the chuck instance either fully inside metasounds or in BP/CPP, the chuck instance can then be manipulated via set/get parameter calls and will automatically recompile when the code in the UChuckCode object it was created from is updated.
+I split the Chuck asset into two asset types, one is UChuckCode which represents a block of chuck code, either as a proxy to a file on disk (automatically created via the editor module) or just a text block, this asset can spawn a transient UChuckInstantiation object which is compiled upon its creation, the UChuckInstantiation actually owns the ChucK vm pointer and is used to render audio, there are BP methods that compile a UChuckCode to a UChuckInstantiation as well as a metasound node that does the same thing, thus allowing the user to create the chuck instance either fully inside metasounds or in BP/CPP, the chuck instance can then be manipulated via set/get parameter calls and will automatically recompile when the code in the UChuckCode object it was created from is updated.
 
 As well as the metasound nodes a UChuckSynth component and  ChuckSourceEffect and ChuckSubmixEffect classes are provided that can play chucks and manipulate them. 
 
@@ -45,7 +45,7 @@ The ChunrealEditor module monitors the working directory (inside the plugin fold
 
 At the moment (a matter of days if not hours) it is the 'Chuck Project Editor' that monitors the directory rather than the module itself, the plan is not to have any dependencies on Editor Only functionality so that these chuck sources can also potentially be exposed and modified in packaged games at runtime.
 
-### Manual creation (to be redesigned)
+### Manual creation (to be redesigned - Section oudated)
 
 Instead of assigning the code via blueprints there's a new 'Chuck Processor' asset that can be created via the content browser - 
 ![image](https://github.com/user-attachments/assets/27a6adf3-393b-4b7d-89fb-42ea7423ed2d)
