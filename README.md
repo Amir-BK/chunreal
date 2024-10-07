@@ -36,6 +36,10 @@ The end result should be reusable chuck assets that can be used inside metasound
 
 ## New workflow!
 
+The information in the below section is out dated, I split the Chuck asset into two asset types, one is UChuckCode which represents a block of chuck code, either as a proxy to a file on disk (automatically created via the editor module) or just a text block, this asset can spawn a transient UChuckInstantiation object which is compiled upon its creation, the UChuckInstantiation actually owns the ChucK vm pointer and is used to render audio, there are BP methods that compile a UChuckCode to a UChuckInstantiation as well as a metasound node that does the same thing, thus allowing the user to create the chuck instance either fully inside metasounds or in BP/CPP, the chuck instance can then be manipulated via set/get parameter calls and will automatically recompile when the code in the UChuckCode object it was created from is updated.
+
+As well as the metasound nodes a UChuckSynth component and  ChuckSourceEffect and ChuckSubmixEffect classes are provided that can play chucks and manipulate them. 
+
 ### Automatic monitoring of chuck source files
 The ChunrealEditor module monitors the working directory (inside the plugin folder) for .ck files and will automatically create chuck processor assets for these sources, changes to the source files are tracked and will trigger recompilation of chuck vms using these proxies, this is still a work in progress but there are many advantages to keeping the chucks as source files outside unreal, primarily being able to add them to source control and easily editing them from text editors outside unreal.
 
