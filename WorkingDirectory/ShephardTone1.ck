@@ -17,6 +17,7 @@
 // unit time (change interval)
 1::ms => dur T;
 global Event Test;
+global Event TestDecrement;
 global Event TestSend;
 
 // starting pitches (in MIDI note numbers, octaves apart)
@@ -61,7 +62,10 @@ while( true )
 					Test.broadcast();
 					}
         // wrap (for negative INC)
-        else if( pitches[i] < 12 ) 108 +=> pitches[i];
+        else if( pitches[i] < 12 ){
+			 108 +=> pitches[i];
+				TestDecrement.broadcast();
+			}
     }
     
     // advance time
