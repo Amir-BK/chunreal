@@ -15,7 +15,7 @@ namespace ChunrealMetasound
 				0, // Minor Version
 				InDisplayName,
 				InDescription,
-				PluginAuthor,
+				TEXT("Amir Ben-Kiki"),
 				PluginNodeMissingPrompt,
 				InDefaultInterface,
 				{ INVTEXT("Chuck Value") },
@@ -34,7 +34,7 @@ namespace ChunrealMetasound
 				0, // Minor Version
 				InDisplayName,
 				InDescription,
-				PluginAuthor,
+				TEXT("Amir Ben-Kiki"),
 				PluginNodeMissingPrompt,
 				InDefaultInterface,
 				{ INVTEXT("Chuck Value Getter") },

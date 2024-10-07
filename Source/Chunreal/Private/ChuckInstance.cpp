@@ -15,6 +15,8 @@ DEFINE_METASOUND_DATA_TYPE(Metasound::FChuckInstance, "ChucK Instance")
 namespace ChunrealEventRegistry
 {
 	static TMap<t_CKINT, TTuple<FString, FOnGlobalEventExecuted>> EventDelegates;
+	//native delegates map
+	static TMap<t_CKINT, TTuple<FString, FOnGlobalEventExecutedNative>> NativeEventDelegates;
 	static int EventIdCounter = 0;
 }
 
@@ -24,17 +26,6 @@ inline TSharedPtr<Audio::IProxyData> UChuckCode::CreateProxyData(const Audio::FP
 	return MakeShared<FChuckCodeProxy>(this);
 }
 
-bool UChuckCode::CompileChuckCode()
-{
-	const auto PlatformAudioSettings = FAudioPlatformSettings::GetPlatformSettings(FPlatformProperties::GetRuntimeSettingsClassName());
-	const auto PlatformSampleRate = PlatformAudioSettings.SampleRate;
-	const auto ExpectedBlockSize = PlatformAudioSettings.CallbackBufferFrameSize;
-	const auto ExpectedNumBlocks = PlatformAudioSettings.NumBuffers;
-	
-	
-	
-	return false;
-}
 
 ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 {
@@ -71,13 +62,11 @@ ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 }
 
 
-
-void UChuckInstantiation::SubscribeToGlobalEvent(FString EventName, const FOnGlobalEventExecuted& InDelegate) {
+int UChuckInstantiation::SubscribeToGlobalEvent(FString EventName, const FOnGlobalEventExecuted& InDelegate) {
 	// I think we don't need to check if is valid... we'll see
 	t_CKINT EventID = ChunrealEventRegistry::EventIdCounter++;
 	auto EventCallBack = [](t_CKINT inEventID) {
 		//InDelegate.Execute(EventName);
-		UE_LOG(LogChuckInstance, VeryVerbose, TEXT("Event executed %d"), inEventID);
 		auto EventTuple = ChunrealEventRegistry::EventDelegates[inEventID];
 		EventTuple.Value.ExecuteIfBound(EventTuple.Key);
 		};
@@ -89,20 +78,36 @@ void UChuckInstantiation::SubscribeToGlobalEvent(FString EventName, const FOnGlo
 
 	ChuckVm->globals()->listenForGlobalEvent(EventNameChar, EventID, (EventCallBack), (t_CKBOOL)(true));
 
-};
+	return EventID;
 
-UChuckInstantiation* UChuckCode::SpawnChuckInstance(int32 InSampleRate, int32 InNumChannels)
+}
+int UChuckInstantiation::SubscribeToGlobalEventNative(FString EventName, const FOnGlobalEventExecutedNative& InDelegate)
 {
-	const auto PlatformAudioSettings = FAudioPlatformSettings::GetPlatformSettings(FPlatformProperties::GetRuntimeSettingsClassName());
-	const auto PlatformSampleRate = PlatformAudioSettings.SampleRate;
+	t_CKINT EventID = ChunrealEventRegistry::EventIdCounter++;
+	auto EventCallBack = [](t_CKINT inEventID) {
+		//InDelegate.Execute(EventName);
+		auto EventTuple = ChunrealEventRegistry::NativeEventDelegates[inEventID];
+		EventTuple.Value.ExecuteIfBound(EventTuple.Key);
+		};
+
+	const char* EventNameChar = TCHAR_TO_ANSI(*EventName);
+	//add to global static map
+	auto EventTuple = TTuple<FString, FOnGlobalEventExecutedNative>(EventName, InDelegate);
+	ChunrealEventRegistry::NativeEventDelegates.Add(TTuple<t_CKINT, TTuple<FString, FOnGlobalEventExecutedNative>>(EventID, EventTuple));
+
+	ChuckVm->globals()->listenForGlobalEvent(EventNameChar, EventID, (EventCallBack), (t_CKBOOL)(true));
+	
+	
+	return EventID;
+}
+;
+
+UChuckInstantiation* UChuckCode::SpawnChuckInstance()
+{
+	
 	
 	auto* NewChuck = NewObject<UChuckInstantiation>(this);
-	//NewChuck->CreateChuckVm(InNumChannels);
-	//NewChuck->ChuckVm = CreateChuckVm(InNumChannels);
-	//need to init
-	//NewChuck->ChuckVm->init();
-	//NewChuck->ChuckVm->start();
-	//CompileChuckAsset(NewChuck->ChuckVm);
+	
 	
 	return NewChuck;
 }
@@ -123,39 +128,8 @@ void UChuckCode::CompileChuckAsset(ChucK* chuckRef)
 	}
 }
 
-inline int32 UChuckInstantiation::OnGenerateAudio(float* OutAudio, int32 NumSamples) {
-	//so if we're here we must already have a chuck vm, I think? 
-	FChunrealModule::RunChuck(ChuckVm, nullptr, OutAudio, NumSamples);
-
-	return NumSamples;
-}
-
 TSharedPtr<Audio::IProxyData> UChuckInstantiation::CreateProxyData(const Audio::FProxyDataInitParams& InitParams)
 {
 	return MakeShared<FChuckInstanceProxy>(this);
 }
 
-inline TArray<FAudioParameter> UChuckInstantiation::GetAllGlobalOutputsFromChuck() {
-	check(ChuckVm != nullptr);
-	UE_LOG(LogChuckInstance, VeryVerbose, TEXT("Getting all global outputs from Chuck instance"));
-	TArray<FAudioParameter> Params;
-
-	// Define the callback function
-	auto MyCallbackFunction = [](const std::vector<Chuck_Globals_TypeValue>& list, void* data) {
-		// Process the list of global variables
-		UE_LOG(LogChuckInstance, VeryVerbose, TEXT("Processing list of global variables"));
-		for (const auto& item : list) {
-			// Example: Print the name of each global variable
-			UE_LOG(LogChuckInstance, VeryVerbose, TEXT("Global Variable: %s"), *FString(item.name.c_str()));
-		}
-		};
-
-	// Call the getAllGlobalVariables method
-	void* data = new long;
-	
-	ChuckVm->globals()->getAllGlobalVariables(MyCallbackFunction, data);
-
-	delete static_cast<int*>(data);
-
-	return Params;
-}

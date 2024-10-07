@@ -16,6 +16,7 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnChuckNeedsRecompile);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FOnGlobalEventExecuted, FString, GlobalEventName);
+DECLARE_DELEGATE_OneParam(FOnGlobalEventExecutedNative, const FString&);
 
 namespace ChunrealMetasound
 {
@@ -158,23 +159,14 @@ public:
 
 
 
-
-	bool CompileChuckCode();
-
-	bool bNeedsRecompile = false;
-
 	UPROPERTY(BlueprintReadWrite, Category = "Chuck", meta = (MultiLine = true, ExposeOnSpawn = true))
 	FString Code;
-
-	//if true, the ChucK will only be compiled once and shared with all instantiations via metasounds 
-	UPROPERTY(BlueprintReadWrite, Category = "Chuck", meta = (ExposeOnSpawn = true), EditAnywhere)
-	bool bShareChuck = false;
 
 	//spawn chuck with optional instance ID for registration with the module, we'll see about destroying it later
 	ChucK* CreateChuckVm(int32 InNumChannels = 2);
 
 	UFUNCTION(BlueprintCallable, Category = "ChucK")
-	UChuckInstantiation* SpawnChuckInstance(int32 InSampleRate = 48000, int32 InNumChannels = 2);
+	UChuckInstantiation* SpawnChuckInstance();
 
 	void CompileChuckAsset(ChucK* chuckRef);
 
@@ -222,12 +214,7 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 
 public:
 
-	// Called when synth is created
-	virtual bool Init(int32& SampleRate) { return true; }
-
-	// Called to generate more audio
-	virtual int32 OnGenerateAudio(float* OutAudio, int32 NumSamples); // override;
-
+	
 	UChuckInstantiation()
 	{
 		// Must be created by a valid ChuckCode object
@@ -257,8 +244,12 @@ public:
 
 	}
 public:
+
+	//subscribe to a global event executed by the chuck VM, returns the event ID that can be used for unsubscribing
 	UFUNCTION(BlueprintCallable, Category = "Chuck", meta = (AutoCreateRefTerm = "InDelegate", Keywords = "Event, Quantization, DAW"))
-	void SubscribeToGlobalEvent(FString EventName, const FOnGlobalEventExecuted& InDelegate);
+	int SubscribeToGlobalEvent(FString EventName, const FOnGlobalEventExecuted& InDelegate);
+
+	int SubscribeToGlobalEventNative(FString EventName, const FOnGlobalEventExecutedNative& InDelegate);
 
 	UFUNCTION(BlueprintAuthorityOnly, Category = "Chuck")
 	void ExecuteGlobalEvent(FString EventName) {
@@ -390,9 +381,6 @@ public:
 		}
 	}
 
-	//doesn't actually work, in theory it could be used to map all the i/os from a chuck, maybe should be attempted using ckdoc class
-	UFUNCTION(BlueprintCallable, Category = "ChucK")
-	TArray<FAudioParameter> GetAllGlobalOutputsFromChuck();
 
 	// the chuck code object used to spawn this instance, 
 	UPROPERTY()

@@ -81,7 +81,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		DEFINE_OUTPUT_METASOUND_PARAM(AudioOutRight, "Audio Out Right", "Right output of Sfizz Synth");
 	}
 
-	class ChunrealMetasoundMidiOperator final : public TExecutableOperator<ChunrealMetasoundMidiOperator>
+	class FChunrealMetasoundMidiOperator final : public TExecutableOperator<FChunrealMetasoundMidiOperator>
 	{
 	public:
 		static const FNodeClassMetadata& GetNodeInfo()
@@ -93,11 +93,11 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 					Info.MajorVersion = 1;
 					Info.MinorVersion = 0;
 					Info.DisplayName = INVTEXT("Chuck Midi Renderer Node");
-					Info.Description = INVTEXT("This nodes receives a midi stream and passes it to the chuck vm instance");
-					Info.Author = PluginAuthor;
+					Info.Description = INVTEXT("This node takes a compiled chuck instances and produces audio from it, can also pass a midi stream as events into chuck");
+					Info.Author = Info.Author = TEXT("Amir Ben-Kiki");
 					Info.PromptIfMissing = PluginNodeMissingPrompt;
 					Info.DefaultInterface = GetVertexInterface();
-					Info.CategoryHierarchy = { INVTEXT("Synthesis"), NodeCategories::Music };
+					Info.CategoryHierarchy = { INVTEXT("Chunreal"), NodeCategories::Music };
 					return Info;
 				};
 
@@ -166,10 +166,10 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			FOutputVertexInterface OutputInterface;
 
 
-			return MakeUnique<ChunrealMetasoundMidiOperator>(InParams, MoveTemp(Inputs));
+			return MakeUnique<FChunrealMetasoundMidiOperator>(InParams, MoveTemp(Inputs));
 		}
 
-		ChunrealMetasoundMidiOperator(const FBuildOperatorParams& InParams, FInputs&& InInputs)
+		FChunrealMetasoundMidiOperator(const FBuildOperatorParams& InParams, FInputs&& InInputs)
 			: Inputs(MoveTemp(InInputs))
 			, SampleRate(InParams.OperatorSettings.GetSampleRate())
 			, AudioOutLeft(FAudioBufferWriteRef::CreateNew(InParams.OperatorSettings))
@@ -233,7 +233,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 
 		//destructor
-		virtual ~ChunrealMetasoundMidiOperator()
+		virtual ~FChunrealMetasoundMidiOperator()
 		{
 			UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Destructor"));
 
@@ -572,7 +572,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 	{
 	public:
 		explicit FChuckMidiRenderer(const FNodeInitData& InInitData)
-			: FNodeFacade(InInitData.InstanceName, InInitData.InstanceID, TFacadeOperatorClass<ChunrealMetasoundMidiOperator>())
+			: FNodeFacade(InInitData.InstanceName, InInitData.InstanceID, TFacadeOperatorClass<FChunrealMetasoundMidiOperator>())
 		{}
 		virtual ~FChuckMidiRenderer() override = default;
 	};
