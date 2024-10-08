@@ -92,7 +92,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 					Info.ClassName = GetClassName();
 					Info.MajorVersion = 1;
 					Info.MinorVersion = 0;
-					Info.DisplayName = INVTEXT("Chuck Midi Renderer Node");
+					Info.DisplayName = INVTEXT("Chuck Instance Renderer Node");
 					Info.Description = INVTEXT("This node takes a compiled chuck instances and produces audio from it, can also pass a midi stream as events into chuck");
 					Info.Author = Info.Author = TEXT("Amir Ben-Kiki");
 					Info.PromptIfMissing = PluginNodeMissingPrompt;
@@ -304,6 +304,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			PendingNoteActions.Empty();
 
 
+
 			const float* inBufferLeft = Inputs.AudioInLeft->GetData();
 			const float* inBufferRight = Inputs.AudioInRight->GetData();
 			float* outBufferLeft = AudioOutLeft->GetData();
@@ -314,7 +315,11 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			const FChuckInstance& ChuckInstance = *Inputs.ChuckInstance;
 			if (!ChuckInstance.IsInitialized())
 			{
-				ChuckProcessor = nullptr;
+				//to clear out buffers that might be stuck from past instances
+				AudioOutLeft->Zero();
+				AudioOutRight->Zero();
+
+			//	ChuckProcessor = nullptr;
 				return;
 			}
 

@@ -94,8 +94,8 @@ namespace ChunrealMetasounds::ChuckCompiler
 					Info.ClassName = GetClassName();
 					Info.MajorVersion = 1;
 					Info.MinorVersion = 0;
-					Info.DisplayName = INVTEXT("Chuck Midi Compiler");
-					Info.Description = INVTEXT("This nodes receives a midi stream and passes it to the chuck vm instance");
+					Info.DisplayName = INVTEXT("Chuck Code To Instance Compiler");
+					Info.Description = INVTEXT("This node produces a live ChucK instance from a code object");
 					Info.Author = PluginAuthor;
 					Info.PromptIfMissing = PluginNodeMissingPrompt;
 					Info.DefaultInterface = GetVertexInterface();
@@ -264,15 +264,41 @@ namespace ChunrealMetasounds::ChuckCompiler
 		void Execute()
 		{
 			//if we have a chuck code asset, compile it and create a chuck instance
+			if (bIsProxySet)
+			{
+				//if proxy was already set, we need to check if the chuck code asset has changed, or if it was set to null
+				// start with null checking
+				if (Inputs.ChuckInstance->IsInitialized())
+				{
+					//if the chuck code asset has changed, we need to destroy the proxy and clear our output
+					if (Inputs.ChuckInstance->GetProxy() != CurrentChuckCodeProxy)
+					{
+						//delete theChuck;
+						//theChuck = nullptr;
+						ChuckInstance->MarkAsGarbage();
+						bIsProxySet = false;
+					}
+				}
+				else
+				{
+					//delete theChuck;
+					//theChuck = nullptr;
+					ChuckInstance->MarkAsGarbage();
+					Outputs.ChuckInstanceOut->operator=(FChuckInstance());
+					bIsProxySet = false;
+				}
+
+			}
+			
 			if (Inputs.ChuckInstance->IsInitialized() && !bIsProxySet)
 			{
-				auto Proxy = Inputs.ChuckInstance->GetProxy();
-				//if we have a chuck code asset, compile it and create a chuck instance
-				ChuckInstance = Proxy->ChuckProcessor->SpawnChuckInstance();
+				CurrentChuckCodeProxy = Inputs.ChuckInstance->GetProxy();
+				//if we have a chuck code asset, we produce an instantiation for it, this takes care of compilation
+				ChuckInstance = CurrentChuckCodeProxy->ChuckProcessor->SpawnChuckInstance();
 				Audio::FProxyDataInitParams InitParams;
-				auto NewProxy = FChuckInstance(ChuckInstance->CreateProxyData(InitParams));
+				auto NewInstanceProxy = FChuckInstance(ChuckInstance->CreateProxyData(InitParams));
 				//NewProxy.ChuckInstance = NewInstantiation;
-				Outputs.ChuckInstanceOut->operator=(NewProxy);
+				Outputs.ChuckInstanceOut->operator=(NewInstanceProxy);
 
 
 
@@ -285,6 +311,7 @@ namespace ChunrealMetasounds::ChuckCompiler
 
 		bool bIsProxySet = false;
 
+		const FChuckCodeProxy* CurrentChuckCodeProxy = nullptr;
 		FInputs Inputs;
 		FOutputs Outputs;
 
