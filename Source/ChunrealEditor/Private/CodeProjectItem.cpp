@@ -109,12 +109,12 @@ void UCodeProjectItem::HandleDirectoryChanged(const TArray<FFileChangeData>& Fil
 			{
 			if (Change.Filename.EndsWith(TEXT(".ck")))
 			{
-				auto* ChuckProcessor = FChunrealEditor::GetProcessorProxyForChuck(Change.Filename);
-				if (ChuckProcessor)
+				auto* ChuckCodeObject = FChunrealEditor::GetProcessorProxyForChuck(Change.Filename);
+				if (ChuckCodeObject)
 				{
 					//FGuid OldGuid = ChuckProcessor->ChuckGuid;
 					//ChuckProcessor->ChuckGuid = FGuid::NewGuid();
-					ChuckProcessor->OnChuckNeedsRecompile.Broadcast();
+					ChuckCodeObject->OnChuckNeedsRecompile.Broadcast();
 				//	UE_LOG(LogTemp, Log, TEXT("Chuck file: %s, has been modified. Old Guid: %s, New Guid: %s"), *Change.Filename, *OldGuid.ToString(), *ChuckProcessor->ChuckGuid.ToString());
 				}
 			}

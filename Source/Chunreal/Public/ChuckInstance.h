@@ -141,7 +141,7 @@ class UChuckInstantiation;
  * A chuck processor really represents the CODE for a chuck, not the actual running instance of a chuck,
  * So it's more of a template and I might rename it to reflect this
  */
-UCLASS(BlueprintType)
+UCLASS(ClassGroup = (Chunreal), BlueprintType)
 class CHUNREAL_API UChuckCode : public UObject, public IAudioProxyDataFactory
 {
 	GENERATED_BODY()
@@ -151,15 +151,22 @@ class CHUNREAL_API UChuckCode : public UObject, public IAudioProxyDataFactory
 
 public:
 
+	//indicates that an audio managed asset is orphaned and is no longer synced to a source file on disk
+	UPROPERTY(VisibleAnywhere, Category = "Chuck")
+	bool bIsStale = false;
+
 	UPROPERTY()
 	bool bIsAutoManaged = false; //for chucks that are automatically created by the system from .ck files in the working directory
+
+	UPROPERTY(VisibleAnywhere, Category = "Chuck")
+	FDateTime LastModifiedTimestamp;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Chuck")
 	FString SourcePath;
 
 
 
-	UPROPERTY(BlueprintReadWrite, Category = "Chuck", meta = (MultiLine = true, ExposeOnSpawn = true))
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Chuck", meta = (MultiLine = true, ExposeOnSpawn = true))
 	FString Code;
 
 	//spawn chuck vm, should probably be in the instantiation class rather than code class 

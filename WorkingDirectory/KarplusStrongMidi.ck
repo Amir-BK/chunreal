@@ -7,14 +7,14 @@ global Event noteEvent;
 global float noteFreq;
 
 
-//me.dir() + "ShephardTone.ck" => string ShepFile;
+me.dir() + "chant.ck" => string ShepFile;
 
 //Machine.add(ShepFile);
 
 36 => noteFreq;
 <<< "Sample Rate:" , second/samp >>>;
 // feedforward
-Noise imp => OneZero lowpass => PoleZero allpass => dac;
+Noise imp => OneZero lowpass => PoleZero allpass => JCRev reverb => dac;
 // feedback
 allpass => Delay delay => lowpass;
 0 => imp.gain;

@@ -19,6 +19,7 @@
 #include "Engine/AssetManager.h"
 #include "ChunrealAssetClasses.h"
 #include "Interfaces/IPluginManager.h"
+
 #include "ObjectTools.h"
 #include "IAssetTools.h"
 
@@ -84,7 +85,8 @@ public:
 			TArray<FString> ResultTokens;
 			FFileHelper::LoadFileToStringArrayWithPredicate(ResultTokens, *(WorkingDir + "/" + ChuckFile), [](const FString& Line) { return Line.Contains(TEXT("UCHUCK()")); });
 			bool bIsUChuck = ResultTokens.Num() > 0;
-
+			auto ModifiedTimestamp = FFileManagerGeneric::Get().GetTimeStamp(*(WorkingDir + "/" + ChuckFile));
+			bool bNeedToUpdateCode = false;
 			
 			//we may already have an asset for this chuck file
 			FString ChuckAssetPath = TEXT("/Chunreal/Chunreal/RuntimeChucks/") + ChuckName + TEXT(".") + ChuckName;
@@ -103,6 +105,15 @@ public:
 				ChuckProcessor = Cast<UChuckCode>(AssetData[ExistingAssetIndex].GetAsset());
 				AssetData.RemoveAtSwap(ExistingAssetIndex);
 				UE_LOG(LogTemp, Log, TEXT("Found Chuck file: %s, already exists as asset."), *ChuckFile);
+				//if timestamp is different, update the code
+				if (ChuckProcessor->LastModifiedTimestamp != ModifiedTimestamp)
+				{
+					//ChuckProcessor->SourcePath = WorkingDir + "/" + ChuckFile;
+					ChuckProcessor->LastModifiedTimestamp = ModifiedTimestamp;
+					bNeedToUpdateCode = true;
+					//log : an existing chuck has been updated 
+					UE_LOG(LogTemp, Log, TEXT("Chuck file: %s, has been updated."), *ChuckFile);
+				}
 	
 			}
 			else {
@@ -111,10 +122,19 @@ public:
 				ChuckProcessor = Cast<UChuckCode>(ChuckNewObject);
 				ChuckProcessor->bIsAutoManaged = true;
 				ChuckProcessor->SourcePath = WorkingDir + "/" + ChuckFile;
+				ChuckProcessor->LastModifiedTimestamp = ModifiedTimestamp;
+				bNeedToUpdateCode = true;
 				//ChuckProcessor->ChuckGuid = FGuid::NewGuid();
 				AssetRegistryModule.Get().AssetCreated(ChuckProcessor);
 			}
 
+			if (bNeedToUpdateCode)
+			{
+				FString ChuckStringFromFile;
+				FFileHelper::LoadFileToString(ChuckStringFromFile, *(WorkingDir + "/" + ChuckFile));
+				ChuckProcessor->Code = ChuckStringFromFile;
+				ChuckProcessor->OnChuckNeedsRecompile.Broadcast();
+			}
 		}
 
 		//ObjectTools::D
@@ -122,10 +142,16 @@ public:
 		//delete any remaining assets, with dialog?
 		if (AssetData.Num() > 0)
 		{
-			ObjectTools::DeleteAssets(AssetData, true);
+			//first iterate them and mark them as stale, we will probably not delete them but rather show a warning in the editor
+			
+			for (const FAssetData& Asset : AssetData)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Found stale asset: %s"), *Asset.AssetName.ToString());
+				Cast<UChuckCode>(Asset.GetAsset())->bIsStale = true;
+			}
+			//ObjectTools::DeleteAssets(AssetData, true);
 		}
 		
-
 
 
 	}

@@ -22,7 +22,7 @@ void FChunrealEditor::StartupModule()
 	FAssetToolsModule::GetModule().Get().RegisterAssetTypeActions(ChuckInstantiationActionsSharedPtr.ToSharedRef());
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	PropertyModule.RegisterCustomClassLayout("ChuckProcessor", FOnGetDetailCustomizationInstance::CreateStatic(&FChuckProcessorDetails::MakeInstance));
+	//PropertyModule.RegisterCustomClassLayout("ChuckProcessor", FOnGetDetailCustomizationInstance::CreateStatic(&FChuckProcessorDetails::MakeInstance));
 
 	//code editor - 
 	FCodeEditorStyle::Initialize();
