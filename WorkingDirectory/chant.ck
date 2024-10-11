@@ -23,6 +23,8 @@
 //         published in ChucK examples 2021
 //--------------------------------------------------------------------
 
+//UCHUCK();
+
 // synthesis patch
 Impulse i => TwoZero t => TwoZero t2 => OnePole p;
 // formant filters

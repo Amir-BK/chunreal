@@ -194,9 +194,24 @@ public:
 			}
 		}
 
+		OnChuckCodeChanged.Broadcast();
+
 	//CodeEditor->SetText(InCode);
 	}
 
+	//Use this to create a transient code object from an existing code file, useful to let the user modify chucks without affecting the original object
+	UFUNCTION(BlueprintCallable, Category = "ChucK")
+	void CopyCodeFromObject(UChuckCode* InCodeObject)
+	{
+		if (InCodeObject)
+		{
+			ChuckCode = NewObject<UChuckCode>(this);
+			SetCode(InCodeObject);
+		}
+	}
+
+
+	//TODO: remove?
 	UFUNCTION(BlueprintCallable, Category = "ChucK")
 	UChuckCode* SpawnNewChuckCodeObjectFromWidget()
 	{

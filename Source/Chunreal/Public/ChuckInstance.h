@@ -407,17 +407,11 @@ public:
 			bHasSporkedOnce = true;
 		}
 		
-		if (ParentChuckCode->bIsAutoManaged)
-		{
-			//FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
-			//FString WorkingDir = ChunrealModule.workingDirectory;
-			FChunrealModule::CompileChuckFile(ChuckVm, TCHAR_TO_UTF8(*ParentChuckCode->SourcePath));
-
-		}
-		else
-		{
+		//when the editor is available it will update the code in the asset,
+		//This will not completly prevent users from modifying the chuck sources on disk though, as chucks might refer to other chucks,
+		//But if all the code in the chuck is self contained it can prevent undesired tempering.
 			FChunrealModule::CompileChuckCode(ChuckVm, TCHAR_TO_UTF8(*ParentChuckCode->Code));
-		}
+
 
 
 

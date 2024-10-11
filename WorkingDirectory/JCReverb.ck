@@ -24,3 +24,5 @@ mixGain => revR.gain;
 
 // infinite time loop
 while( true ) 1::second => now;
+
+fun void UCHUCK();

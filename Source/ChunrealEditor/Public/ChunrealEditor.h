@@ -59,6 +59,27 @@ public:
 		}
 	}
 
+	static void DeleteStaleChuckAssets()
+	{
+		const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+		auto& AssetTools = IAssetTools::Get();
+		TArray<FAssetData> AssetData;
+		AssetRegistryModule.Get().GetAssetsByClass(UChuckCode::StaticClass()->GetClassPathName(), AssetData, true);
+
+		for (const FAssetData& Asset : AssetData)
+		{
+			auto* AsChuckCode = Cast<UChuckCode>(Asset.GetAsset());
+			if (AsChuckCode && AsChuckCode->bIsStale)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Deleting stale Chuck Code asset: %s"), *Asset.AssetName.ToString());
+				ObjectTools::DeleteAssets({ Asset }, true);
+		
+			}
+		}
+
+	
+	}
+
 	static void ScanWorkingDirectoryAndUpdateRuntimeAssets()
 	{
 		// so, in theory this will only run when we have an editor, but we don't want to block completly the option to add chucks without an editor, we'll see
@@ -94,8 +115,7 @@ public:
 			int ExistingAssetIndex = AssetData.IndexOfByPredicate([&ChuckAssetName](const FAssetData& AssetData) 
 				{ 
 					return AssetData.ObjectPath.IsEqual(ChuckAssetName); 
-				
-				
+
 				});
 			
 			UChuckCode* ChuckProcessor = nullptr;
@@ -118,6 +138,11 @@ public:
 			}
 			else {
 
+				if (!bIsUChuck)
+				{
+					UE_LOG(LogTemp, Log, TEXT("Found Chuck file: %s, but it's not marked as UCHUCK(), not creating Code proxy object."), *ChuckFile);
+					continue;
+				}
 				UObject* ChuckNewObject = AssetTools.CreateAsset(ChuckName, TEXT("/chunreal/chunreal/RuntimeChucks"), UChuckCode::StaticClass(), Factory);
 				ChuckProcessor = Cast<UChuckCode>(ChuckNewObject);
 				ChuckProcessor->bIsAutoManaged = true;
@@ -133,21 +158,30 @@ public:
 				FString ChuckStringFromFile;
 				FFileHelper::LoadFileToString(ChuckStringFromFile, *(WorkingDir + "/" + ChuckFile));
 				ChuckProcessor->Code = ChuckStringFromFile;
+				ChuckProcessor->MarkPackageDirty();
+				ChuckProcessor->bIsStale = !bIsUChuck;
 				ChuckProcessor->OnChuckNeedsRecompile.Broadcast();
 			}
 		}
 
 		//ObjectTools::D
 
-		//delete any remaining assets, with dialog?
+		//mark remaining auto managed asset as stale, maybe pending garbage? with dialog? we can't do this on startup
 		if (AssetData.Num() > 0)
 		{
 			//first iterate them and mark them as stale, we will probably not delete them but rather show a warning in the editor
 			
 			for (const FAssetData& Asset : AssetData)
 			{
-				UE_LOG(LogTemp, Log, TEXT("Found stale asset: %s"), *Asset.AssetName.ToString());
-				Cast<UChuckCode>(Asset.GetAsset())->bIsStale = true;
+				//if is an automanaged code asset we can mark it as stale
+				auto* AsChuckCode = Cast<UChuckCode>(Asset.GetAsset());
+
+				if (AsChuckCode && AsChuckCode->bIsAutoManaged)
+				{
+				UE_LOG(LogTemp, Log, TEXT("Found stale Chuck Code asset: %s"), *Asset.AssetName.ToString());
+				AsChuckCode->bIsStale = true;
+				}
+					//->bIsStale = true;
 			}
 			//ObjectTools::DeleteAssets(AssetData, true);
 		}

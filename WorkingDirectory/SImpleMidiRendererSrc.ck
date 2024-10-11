@@ -45,3 +45,4 @@ fun void play( float note, float velocity )
     Std.mtof( note ) => voc.freq;
     velocity => voc.noteOn;
 }
+

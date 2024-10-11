@@ -71,7 +71,7 @@ void UCodeProjectItem::HandleDirectoryScanned(const FString& InPathName, ECodePr
 
 			// @TODO: now register for any changes to this directory if needed
 			FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::Get().LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-			//DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(InPathName, IDirectoryWatcher::FDirectoryChanged::CreateUObject(NewItem, &UCodeProjectItem::HandleDirectoryChanged), OnDirectoryChangedHandle);
+			DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(InPathName, IDirectoryWatcher::FDirectoryChanged::CreateUObject(NewItem, &UCodeProjectItem::HandleDirectoryChanged), OnDirectoryChangedHandle);
 		}
 	}
 }
@@ -96,41 +96,24 @@ void UCodeProjectItem::HandleDirectoryChanged(const TArray<FFileChangeData>& Fil
 		case FFileChangeData::FCA_Unknown:
 			break;
 		case FFileChangeData::FCA_Added:
-			{
-				//is file a chuck file?
+
 			if (Change.Filename.EndsWith(TEXT(".ck")))
 			{
 				FChunrealEditor::ScanWorkingDirectoryAndUpdateRuntimeAssets();
 			}
 
-			}
 			break;
 		case FFileChangeData::FCA_Modified:
-			{
 			if (Change.Filename.EndsWith(TEXT(".ck")))
 			{
-				auto* ChuckCodeObject = FChunrealEditor::GetProcessorProxyForChuck(Change.Filename);
-				if (ChuckCodeObject)
-				{
-					//FGuid OldGuid = ChuckProcessor->ChuckGuid;
-					//ChuckProcessor->ChuckGuid = FGuid::NewGuid();
-					ChuckCodeObject->OnChuckNeedsRecompile.Broadcast();
-				//	UE_LOG(LogTemp, Log, TEXT("Chuck file: %s, has been modified. Old Guid: %s, New Guid: %s"), *Change.Filename, *OldGuid.ToString(), *ChuckProcessor->ChuckGuid.ToString());
-				}
+				FChunrealEditor::ScanWorkingDirectoryAndUpdateRuntimeAssets();
 			}
-			}
+
 			break;
 		case FFileChangeData::FCA_Removed:
-			{
 			if (Change.Filename.EndsWith(TEXT(".ck")))
 			{
-				auto* ChuckProcessor = FChunrealEditor::GetProcessorProxyForChuck(Change.Filename);
-				if (ChuckProcessor)
-				{
-					//ChuckProcessor->ChuckGuid = FGuid::NewGuid();
-					ChuckProcessor->SourcePath = TEXT("");
-				}
-			}
+				FChunrealEditor::ScanWorkingDirectoryAndUpdateRuntimeAssets();
 			}
 			break;
 		}

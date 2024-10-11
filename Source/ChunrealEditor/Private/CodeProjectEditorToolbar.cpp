@@ -8,6 +8,7 @@
 #include "SourceCodeNavigation.h"
 #include "UObject/UObjectIterator.h"
 #include "MetasoundSource.h"
+#include "ChunrealEditor.h"
 #include <ChuckInstance.h>
 
 
@@ -35,38 +36,26 @@ void FCodeProjectEditorToolbar::FillEditorToolbar(FToolBarBuilder& ToolbarBuilde
 	ToolbarBuilder.EndSection();
 
 	// Only show the compile options on machines with the solution (assuming they can build it)
-	if ( FSourceCodeNavigation::IsCompilerAvailable() )
-	{
+	//if ( FSourceCodeNavigation::IsCompilerAvailable() )
+	//{
 		ToolbarBuilder.BeginSection(TEXT("Build"));
 		{
 			struct Local
 			{
 				static void ExecuteCompile(TSharedPtr<FCodeProjectEditor> InCodeProjectEditorPtr)
 				{
-					if(InCodeProjectEditorPtr->SaveAll())
-					{
-						FLevelEditorActionCallbacks::RecompileGameCode_Clicked();
-					}
+					//if(InCodeProjectEditorPtr->SaveAll())
+					//{
+					//	FLevelEditorActionCallbacks::RecompileGameCode_Clicked();
+					//}
+
+					// we will comandeer this function to send the code to a chuck vm for attempted compilation, can be done before saving
+
 				}
 
-				static void PrintAllChuckAsetNames(TSharedPtr<FCodeProjectEditor> InCodeProjectEditorPtr)
+				static void DeleteStaleChucks(TSharedPtr<FCodeProjectEditor> InCodeProjectEditorPtr)
 				{
-					//get all UChuckProcessors
-					TArray<UChuckCode*> ChuckProcessors;
-					for (TObjectIterator<UChuckCode> Itr; Itr; ++Itr)
-					{
-						ChuckProcessors.Add(*Itr);
-					}
-
-					//print their names
-					for (UChuckCode* ChuckProcessor : ChuckProcessors)
-					{
-						bool bIsAsset = ChuckProcessor->IsAsset();
-						bool bIsInTransientPackage = ChuckProcessor->GetPackage() == GetTransientPackage();
-						FString FormattedOutput = FString::Printf(TEXT("ChuckProcessor: %s. Is Asset: %s, Is Transient %s"), *ChuckProcessor->GetName(), ChuckProcessor->IsAsset() ? TEXT("true") : TEXT("false"), bIsInTransientPackage ? TEXT("true") : TEXT("false"));
-						
-						UE_LOG(LogTemp, Warning, TEXT("ChuckProcessor: %s"), *FormattedOutput);
-					}
+					FChunrealEditor::DeleteStaleChuckAssets();
 
 				}
 			};
@@ -80,23 +69,22 @@ void FCodeProjectEditorToolbar::FillEditorToolbar(FToolBarBuilder& ToolbarBuilde
 					FIsActionButtonVisible::CreateStatic(FLevelEditorActionCallbacks::CanShowSourceCodeActions)),
 				NAME_None,
 				NSLOCTEXT( "LevelEditorToolBar", "CompileMenuButton", "Compile" ),
-				NSLOCTEXT( "LevelEditorActions", "RecompileGameCode_ToolTip", "Recompiles and reloads C++ code for game systems on the fly" ),
+				NSLOCTEXT( "LevelEditorActions", "RecompileGameCode_ToolTip", "Attempts to recompile the selected chuck asset" ),
 				FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Recompile")
 				);
 
 			//add a button that finds all UChuckProcessors and prints their names
 			ToolbarBuilder.AddToolBarButton(
 				FUIAction(
-					FExecuteAction::CreateStatic(&Local::PrintAllChuckAsetNames, CodeProjectEditorPtr),
+					FExecuteAction::CreateStatic(&Local::DeleteStaleChucks, CodeProjectEditorPtr),
 					//FCanExecuteAction::CreateStatic(&FLevelEditorActionCallbacks::Recompile_CanExecute),
-					FIsActionChecked(),
-					FIsActionButtonVisible::CreateStatic(FLevelEditorActionCallbacks::CanShowSourceCodeActions)),
+					FIsActionChecked()),
 				NAME_None,
-				NSLOCTEXT("LevelEditorToolBar", "CompileMenuButton", "Print Chuck Processors"),
+				NSLOCTEXT("LevelEditorToolBar", "CompileMenuButton", "Delete stale chuck assets"),
 				NSLOCTEXT("LevelEditorActions", "RecompileGameCode_ToolTip", "Prints the names of all UChuckProcessors"),
 				FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Recompile")
 			);
 		}
 		ToolbarBuilder.EndSection();
-	}
+	//}
 }
