@@ -7,6 +7,8 @@
 
 // Inherited via IAudioProxyDataFactory
 
+static TAutoConsoleVariable<int32> ChuckLogLevel(TEXT("Chuck.LogLevel"), 2, TEXT("ChucK log level"), ECVF_Default);
+
 DEFINE_LOG_CATEGORY_STATIC(LogChuckInstance, VeryVerbose, All);
 
 DEFINE_METASOUND_DATA_TYPE(Metasound::FChuckProcessor, "ChucK Processor")
@@ -36,7 +38,7 @@ ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 	//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Creating new chuck for asset: %s"));
 
 	theChuck = new ChucK();
-	theChuck->setLogLevel(2);
+	theChuck->setLogLevel(ChuckLogLevel.GetValueOnAnyThread());
 	//Initialize Chuck params
 	theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, PlatformSampleRate);
 	theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, InNumChannels);
