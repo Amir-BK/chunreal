@@ -1,16 +1,18 @@
 // stereo reverb
-adc => JCRev revL => LPF LpfL => Gain gL => dac.left;
-adc => JCRev revR => LPF LpfR => Gain gR => dac.right;
-Math.
+adc.left =>  LPF LpfL => Gain gL => JCRev revL => dac.left;
+adc.right =>  LPF LpfR => Gain gR => JCRev revR => dac.right;
+//Math.
 // set effects mix
+//
+//fun void UCHUCK() {};
 
 //Low pass frequency 
-20000 => float f;
+2000 => float f;
 //keep at 1 if using as parallel reverb and control reverb amount via mix, if used as insert this is the wet/dry control.
-0.999  => float mixGain;
+0.1  => float mixGain;
 
 //JCRev output needs to be low otherwise it causes saturation or something? idgi
-0.3 => float dacGain;
+0.1 => float dacGain;
 
 dacGain => gL.gain;
 dacGain => gR.gain;
@@ -25,4 +27,4 @@ mixGain => revR.gain;
 // infinite time loop
 while( true ) 1::second => now;
 
-fun void UCHUCK();
+

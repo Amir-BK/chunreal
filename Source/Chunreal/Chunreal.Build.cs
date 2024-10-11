@@ -44,7 +44,8 @@ public class Chunreal : ModuleRules
                 "MetasoundStandardNodes",
 				"AudioExtensions",
 				"AudioMixer",
-				"AudioMixerCore"
+				"AudioMixerCore",
+				"SignalProcessing"
 			}
             );
 

@@ -235,6 +235,12 @@ namespace ChunrealMetasound
 
 		void Execute()
 		{
+			//if no chuck proxy and initialized with chuckvm, return cause otherwise we'll crash 
+			if (!ChuckInstance->IsInitialized() || ChuckInstance->GetProxy()->ChuckInstance->ChuckVm == nullptr)
+			{
+				return;
+			}
+			
 			if (!bInitialValueSet)
 			{
 				CurrentValue = *TargetValue;

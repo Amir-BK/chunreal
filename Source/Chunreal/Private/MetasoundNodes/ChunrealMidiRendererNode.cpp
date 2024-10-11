@@ -22,6 +22,8 @@
 #include "DSP/DelayStereo.h"
 #include "DSP/Chorus.h"	
 #include "Engine/DataTable.h"
+//#include "DSP/Array"
+#include "DSP/FloatArrayMath.h"
 #include "Components/SynthComponent.h"
 #include "HarmonixDsp/Ramper.h"
 #include "Chunreal/chuck/chuck.h"
@@ -237,20 +239,8 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		{
 			UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck Midi Synth Node Destructor"));
 
-			//Remove ChucK reference with ID
-			//if (!((FString)(*ChuckID)).IsEmpty())
-			//{
-			//	FChunrealModule::RemoveChuckRef(*ChuckID);
-			//	//FChunrealModule::Log(FString("Removed ChucK ID: ") + **ID);
-			//}
-
-			//Delete allocated memory
-			delete inBufferInterleaved;
-			delete outBufferInterleaved;
-
-			//Delete ChucK
-			//delete theChuck;
-			theChuck = nullptr;
+	
+			//theChuck = nullptr;
 
 		}
 			
@@ -304,59 +294,31 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			PendingNoteActions.Empty();
 
 
-
-			const float* inBufferLeft = Inputs.AudioInLeft->GetData();
-			const float* inBufferRight = Inputs.AudioInRight->GetData();
-			float* outBufferLeft = AudioOutLeft->GetData();
-			float* outBufferRight = AudioOutRight->GetData();
-			const int32 numSamples = Inputs.AudioInLeft->Num();
+			Audio::FAlignedFloatBuffer AlignedBufferLeft(*Inputs.AudioInLeft);
+			Audio::FAlignedFloatBuffer AlignedBufferRight(*Inputs.AudioInRight);
+			Audio::FAlignedFloatBuffer InterleavedBuffer;
+			//Audio::FAlignedFloatBuffer ChuckOutputInterleavedBuffer;
 
 			//check that we received a valid chuck through the input
 			const FChuckInstance& ChuckInstance = *Inputs.ChuckInstance;
 			if (!ChuckInstance.IsInitialized())
 			{
-				//to clear out buffers that might be stuck from past instances
+
 				AudioOutLeft->Zero();
 				AudioOutRight->Zero();
 
-			//	ChuckProcessor = nullptr;
 				return;
 			}
 
 			//get proxy 
 			if (ChuckInstance.GetProxy()->ChuckInstance->ChuckVm != nullptr)
 			{
-				//we have a new chuck instance (or the source file has been changed), we can now reinitialize the chuck
-				
-
-
-
-				
-				if (bufferInitialized)
-				{
-					delete inBufferInterleaved;
-					delete outBufferInterleaved;
-					bufferInitialized = false;
-				}
-
-
-				//delete static_cast<int*>(data);
-
-				//theChuck->probeChugins();
-
-
+				//pitch bend data is calculated from midi stream but we don't really pass it to chuck yet
 				const float RampCallRateHz = (float)(1 / SampleRate) / (float)BlockSizeFrames;
 
 				PitchBendRamper.SetRampTimeMs(RampCallRateHz, 5.0f);
 				PitchBendRamper.SetTarget(0.0f);
 				PitchBendRamper.SnapToTarget();
-
-
-
-
-
-				//DeinterleavedBuffer[0] = AudioOutLeft->GetData();
-				//DeinterleavedBuffer[1] = AudioOutRight->GetData();
 
 
 				CurrentTrackNumber = *Inputs.TrackIndex;
@@ -367,27 +329,17 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			theChuck = ChuckInstance.GetProxy()->ChuckInstance->ChuckVm;
 			if (ChuckInstance.GetProxy()->ChuckInstance->ChuckVm == nullptr)
 			{
-				//theChuck = ChuckProcessor->SpawnChuckFromAsset(FString(), SampleRate);
+
 				UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Chuck VM is null"));
 
 				if (bufferInitialized)
 				{
-					delete inBufferInterleaved;
-					delete outBufferInterleaved;
+					//delete DeinterleaveBuffOut;
 					bufferInitialized = false;
 				}
 				return;
 			}
 
-
-			//Make interleaved buffers
-			if (!bufferInitialized)
-			{
-				inBufferInterleaved = new float[BlockSizeFrames * 2];
-				outBufferInterleaved = new float[BlockSizeFrames * 2];
-
-				bufferInitialized = true;
-			}
 
 			
 			StuckNoteGuard.UnstickNotes(*Inputs.MidiStream, [this](const FMidiStreamEvent& Event)
@@ -404,8 +356,7 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			// create an iterator for the midi clock 
 			const TSharedPtr<const FMidiClock, ESPMode::NotThreadSafe> MidiClock = Inputs.MidiStream->GetClock();
 
-			int32 FramesRequired = 1;
-			//while (FramesRequired > 0)
+
 			{
 				while (MidiEventIterator != MidiEvents.end())
 				{
@@ -440,13 +391,12 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 			if (MidiClock.IsValid())
 			{
+				//not really working but we can pass clock data to the chuck instance
+
 				const float ClockSpeed = MidiClock->GetSpeedAtBlockSampleFrame(0);
 				//SetSpeed(ClockSpeed, !(*ClockSpeedAffectsPitchInPin));
 				const float ClockTempo = MidiClock->GetTempoAtBlockSampleFrame(0);
-				//sfizz_send_bpm_tempo(SfizzSynth, 0, ClockTempo);
-				//SetTempo(ClockTempo);
-				//const float Beat = MidiClock->GetQuarterNoteIncludingCountIn();
-				//SetBeat(Beat);
+
 			}
 
 			
@@ -456,26 +406,28 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 			PitchBendRamper.Ramp();
 
-			//we need to copy the node's input data to chuck's input data
-			for (int i = 0; i < BlockSizeFrames; i++)
+			if (!bufferInitialized)
 			{
-				*(inBufferInterleaved + i * 2) = *(inBufferLeft + i);
-				*(inBufferInterleaved + i * 2 + 1) = *(inBufferRight + i);
+				ChuckOutputInterleavedBuffer.Reserve(BlockSizeFrames * 2);
 
+			//	DeinterleaveBuffOut = new float* [2];
+				DeinterleaveBuffOutArray.AddUninitialized(2);
 			}
+
+			//I'm not really seeing performance improvements with the interleaving methods but it's a little cleaner
+			Audio::ArrayInterleave({AlignedBufferLeft, AlignedBufferRight }, InterleavedBuffer);
 
 			//Process samples by ChucK
-			FChunrealModule::RunChuck(ChuckInstance.GetProxy()->ChuckInstance->ChuckVm, (float*)inBufferInterleaved, outBufferInterleaved, BlockSizeFrames);
-
-			//Retrive each output channel and apply volume multiplier
-			for (int i = 0; i < BlockSizeFrames; i++)
-			{
-				*(outBufferLeft + i) = *(outBufferInterleaved + i * 2);// *(*Amplitude);
-				*(outBufferRight + i) = *(outBufferInterleaved + i * 2 + 1);// *(*Amplitude);
-			}
+			FChunrealModule::RunChuck(ChuckInstance.GetProxy()->ChuckInstance->ChuckVm, InterleavedBuffer.GetData(), ChuckOutputInterleavedBuffer.GetData(), BlockSizeFrames);
+	
+			DeinterleaveBuffOutArray[0] = AudioOutLeft->GetData();
+			DeinterleaveBuffOutArray[1] = AudioOutRight->GetData();
 
 
 
+			Audio::ArrayDeinterleave(ChuckOutputInterleavedBuffer.GetData(), DeinterleaveBuffOutArray.GetData(), BlockSizeFrames, 2);
+
+			
 
 		}
 	private:
@@ -534,30 +486,22 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		float PitchBendFactor = 1.0f;
 
 		float FineTuneCents = 0.0f;
-		
-		//sfizz stuff
-		//sfizz_synth_t* SfizzSynth;
 
-		std::vector<float>   DecodedAudioDataBuffer;
-		std::vector<float*>  DeinterleavedBuffer;
-	
-		bool bSuccessLoadSFZFile = false;
-		bool bEpic1SynthCreated = false;
-		FString LibPath;
-		FString ScalaPath;
-
-		int32 VoiceCount = 8;
 
 		
 		FAudioBufferWriteRef AudioOutLeft;
 		FAudioBufferWriteRef AudioOutRight;
-		//unDAWMetasounds::TrackIsolatorOP::FMidiTrackIsolator Filter;
+
 
 		protected:
 			//Audio::FEpicSynth1 EpicSynth1;
 					//interleaved buffers
-			float* inBufferInterleaved;
-			float* outBufferInterleaved;
+
+			Audio::FAlignedFloatBuffer ChuckOutputInterleavedBuffer;
+
+			//float** DeinterleaveBuffOut;
+			//do an array and we don't need to worry about deleting it
+			TArray<float*> DeinterleaveBuffOutArray;
 
 			//reference to chuck
 			ChucK* theChuck = nullptr;
