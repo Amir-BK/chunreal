@@ -25,6 +25,7 @@
 
 //UCHUCK();
 
+;
 // synthesis patch
 Impulse i => TwoZero t => TwoZero t2 => OnePole p;
 // formant filters
@@ -32,7 +33,7 @@ p => TwoPole f1 => Gain g;
 p => TwoPole f2 => g;
 p => TwoPole f3 => g;
 // reverbs
-g => JCRev r => FFT fft =^ Centroid centroid => Flip flip =^ AutoCorr corr => dac;
+g => JCRev r => FFT fft =^ Centroid centroid => Flip flip =^ AutoCorr corr => GVerb test => dac;
 g => JCRev rL => dac;
 g => JCRev rR => dac;
 // delays

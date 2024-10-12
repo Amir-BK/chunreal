@@ -16,7 +16,7 @@ me.dir() + "chant.ck" => string ShepFile;
 36 => noteFreq;
 <<< "Sample Rate:" , second/samp >>>;
 // feedforward
-Noise imp => OneZero lowpass => PoleZero allpass  => dac;
+Noise imp => OneZero lowpass => PoleZero allpass =>  dac;
 // feedback
 allpass => Delay delay => lowpass;
 0 => imp.gain;

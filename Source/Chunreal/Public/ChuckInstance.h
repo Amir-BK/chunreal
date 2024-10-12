@@ -181,8 +181,20 @@ public:
 
 	FOnChuckNeedsRecompile OnChuckNeedsRecompile;
 
+	// extra chuck files that need to be compiled with this chuck code, critical for things like the midi renderer and other libraries
+	UPROPERTY(VisibleAnywhere, Category = "ChucK")
+	TArray<FString> Dependencies;
+
+	const TArray<FString>& GetDependencies() const { return Dependencies; }
+protected:
+
+
+
+
 
 private:
+
+
 
 	//none of these are used 
 	ChucK* Chuck = nullptr;
@@ -280,8 +292,11 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 {
 	GENERATED_BODY()
 
-public:
 
+public:
+	bool bAddMidiDependencies = false;
+
+	//UChuckInstantiation(bool bAddMidiDependencies);
 	
 	UChuckInstantiation();
 
@@ -410,7 +425,20 @@ public:
 		//when the editor is available it will update the code in the asset,
 		//This will not completly prevent users from modifying the chuck sources on disk though, as chucks might refer to other chucks,
 		//But if all the code in the chuck is self contained it can prevent undesired tempering.
-			FChunrealModule::CompileChuckCode(ChuckVm, TCHAR_TO_UTF8(*ParentChuckCode->Code));
+
+
+		auto ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
+		auto WorkingDir = ChunrealModule.workingDirectory;
+		//add dependencies from code object
+		for (auto& Dependency : ParentChuckCode->GetDependencies())
+		{
+			auto CombinedPath = FPaths::Combine(WorkingDir, Dependency);
+			UE_LOG(LogTemp, Log, TEXT("CombPath %s"), *CombinedPath)
+			FChunrealModule::CompileChuckFile(ChuckVm, TCHAR_TO_UTF8(*CombinedPath));
+		}
+
+
+		FChunrealModule::CompileChuckCode(ChuckVm, TCHAR_TO_UTF8(*ParentChuckCode->Code));
 
 
 

@@ -36,10 +36,11 @@ ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 	const auto PlatformSampleRate = PlatformAudioSettings.SampleRate;
 	
 	//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Creating new chuck for asset: %s"));
-
+	FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
 	theChuck = new ChucK();
 	theChuck->setLogLevel(ChuckLogLevel.GetValueOnAnyThread());
 	//Initialize Chuck params
+	theChuck->setParam(CHUCK_PARAM_CHUGIN_DIRECTORY, TCHAR_TO_UTF8(*FPaths::Combine(*ChunrealModule.workingDirectory, TEXT("chugins"))));
 	theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, PlatformSampleRate);
 	theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, InNumChannels);
 	theChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, InNumChannels);
@@ -52,16 +53,27 @@ ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 	//Chuck->setParam(CHUCK_PARAM_DEPRECATE_LEVEL, deprecate_level);
 	theChuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, true);
 	//Chuck->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
-	//Chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
+	//Chuck->setParam(CHUCK_PARAM_CHUGIN_LIST_USER_DIR, TCHAR_TO_UTF8(*FString(ChunrealModule.workingDirectory + "/" + "chugins")));
 	theChuck->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, true);
 
 	//Set working directory
-	FChunrealModule ChunrealModule = FModuleManager::Get().GetModuleChecked<FChunrealModule>("Chunreal");
+
 	theChuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, TCHAR_TO_UTF8(*ChunrealModule.workingDirectory));
+
+	//get chugin directory param and print it
+	//auto ChuginDir = theChuck->getParamString(CHUCK_PARAM_CHUGIN_DIRECTORY);
+	//UE_LOG(LogChuckInstance, VeryVerbose, TEXT("Chugin Directory: %s"), UTF8_TO_TCHAR(ChuginDir.c_str()));
+
+	//auto UserChuginDir = theChuck->getParamString(CHUCK_PARAM_CHUGIN_LIST_USER_DIR);
+	//UE_LOG(LogChuckInstance, VeryVerbose, TEXT("User Chugin Directory: %s"), UTF8_TO_TCHAR(UserChuginDir.c_str()));
+
+	//probe chugins
+	//theChuck->probeChugins();
 
 
 	return theChuck;
 }
+
 
 
 inline UChuckInstantiation::UChuckInstantiation()

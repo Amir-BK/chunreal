@@ -153,14 +153,48 @@ public:
 				AssetRegistryModule.Get().AssetCreated(ChuckProcessor);
 			}
 
+	
+
 			if (bNeedToUpdateCode)
 			{
 				FString ChuckStringFromFile;
 				FFileHelper::LoadFileToString(ChuckStringFromFile, *(WorkingDir + "/" + ChuckFile));
 				ChuckProcessor->Code = ChuckStringFromFile;
+
 				ChuckProcessor->MarkPackageDirty();
 				ChuckProcessor->bIsStale = !bIsUChuck;
-				ChuckProcessor->OnChuckNeedsRecompile.Broadcast();
+				if (bIsUChuck)
+				{
+					//before issuing recompile, check dependencies
+				//UINCLUDE("JA-TimbreLibrary/intqueue.ck");
+				// the includes will appear as comments, these specify paths relative to the working directory
+					ChuckProcessor->Dependencies.Empty();
+				//we need to parse the code and check for includes
+
+					TArray<FString> LineTokens;
+					ChuckProcessor->Code.ParseIntoArrayLines(LineTokens);
+					for (const FString& Line : LineTokens)
+					{
+						//if line contains UINCLUDE, we need to extract the path and add it to the dependencies
+						if (Line.Contains(TEXT("UINCLUDE")))
+						{
+							FString IncludePath = Line;
+							IncludePath.RemoveFromStart(TEXT("//"));
+							IncludePath.RemoveFromStart(TEXT("UINCLUDE("));
+							IncludePath.RemoveFromEnd(TEXT(");"));
+							IncludePath.RemoveFromStart(TEXT("\""));
+							IncludePath.RemoveFromEnd(TEXT("\""));
+							//IncludePath = WorkingDir + "/" + IncludePath;
+							ChuckProcessor->Dependencies.Add(IncludePath);
+							//TODO: m
+						}
+
+					};
+				}
+
+
+				ChuckProcessor->OnChuckNeedsRecompile.Broadcast();				
+				//ChuckProcessor->OnChuckNeedsRecompile.Broadcast();
 			}
 		}
 

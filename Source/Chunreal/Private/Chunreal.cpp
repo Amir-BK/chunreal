@@ -17,6 +17,7 @@
 #include "Misc/FileHelper.h"
 #include "HAL/FileManagerGeneric.h"
 #include "Engine/AssetManager.h"
+#include "HAL/PlatformApplicationMisc.h"
 #include "ChuckInstance.h"
 
 #define LOCTEXT_NAMESPACE "FChunrealModule"
@@ -26,14 +27,20 @@ DEFINE_LOG_CATEGORY(LogChunreal);
 
 void FChunrealModule::StartupModule()
 {
-    //Create Chuck
+	const auto PlatformAudioSettings = FAudioPlatformSettings::GetPlatformSettings(FPlatformProperties::GetRuntimeSettingsClassName());
+	const auto PlatformSampleRate = PlatformAudioSettings.SampleRate;
+	
+	//Create Chuck
     chuckParent = new ChucK();
 	FString BaseDir = IPluginManager::Get().FindPlugin(TEXT("Chunreal"))->GetBaseDir();
 	workingDirectory = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*FPaths::Combine(*BaseDir, TEXT("WorkingDirectory")));
 
 	chuckParent->setParam(CHUCK_PARAM_WORKING_DIRECTORY, TCHAR_TO_UTF8(*workingDirectory));
+	//set chugin directory
+	chuckParent->setParam(CHUCK_PARAM_CHUGIN_LIST_USER_DIR, TCHAR_TO_UTF8(*FPaths::Combine(*workingDirectory, TEXT("chugins"))));
+	chuckParent->setParam(CHUCK_PARAM_CHUGIN_DIRECTORY, TCHAR_TO_UTF8(*FPaths::Combine(*workingDirectory, TEXT("chugins"))));
     //Initialize Chuck params
-    chuckParent->setParam(CHUCK_PARAM_SAMPLE_RATE, FChunrealModule::GetChuckSampleRate());
+    chuckParent->setParam(CHUCK_PARAM_SAMPLE_RATE, PlatformSampleRate);
     chuckParent->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
     chuckParent->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, 2);
     chuckParent->setParam(CHUCK_PARAM_VM_ADAPTIVE, 0);
@@ -50,10 +57,23 @@ void FChunrealModule::StartupModule()
 	//set working directory as plugin directory //WorkingDir
 
 	//chuckParent->vm()->add
+	//probe chugins
+	chuckParent->probeChugins();
 
     //Start ChucK parent
     chuckParent->init();
     chuckParent->start();
+
+	//get chugin directory and print it
+	UE_LOG(LogChunreal, Log, TEXT("Chugin directory: %s"), ANSI_TO_TCHAR(chuckParent->getParamString(CHUCK_PARAM_CHUGIN_DIRECTORY).c_str()));
+
+	auto UserDirStringList = chuckParent->getParamStringList(CHUCK_PARAM_CHUGIN_LIST_USER_DIR);
+	for (auto& UserDir : UserDirStringList)
+	{
+		UE_LOG(LogChunreal, Log, TEXT("User Chugin directory: %s"), ANSI_TO_TCHAR(UserDir.c_str()));
+
+	}
+
 
     //Set log
 #if PRINT_CHUCK_LOG
