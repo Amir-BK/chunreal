@@ -1,5 +1,6 @@
 //UCHUCK();
-
+//UINSTRUMENT();
+//UINCLUDE("ABK-HmxMidi/HmxMidi.ck");
 
 // name: intqueue.ck
 // desc: implements a queue that holds two elements, a "val" and a "voice"
@@ -957,22 +958,27 @@ fun void NoteOff( int m )
 }
 
 
-
-global Event noteEvent;
-global float noteFreq;
+global HmxMidiIn HarmonixMidi;
+MidiMsg msg;
 
 while( true )
 {
-    noteEvent => now;
-    noteFreq $ int => int localNote;
-    NoteOn( localNote, 80 );
-    
-    0.01::second=>now;
-    NoteOff (localNote);
-    //<<< noteFreq >>>;
-    //1::second => now;
-  }
+    HarmonixMidi => now;
 
+    while(HarmonixMidi.recv(msg))
+    {
+       if(HarmonixMidi.IsStdNoteOn(msg))
+       {
+        NoteOn(msg.data2, msg.data3);
+       }
+       else if(HarmonixMidi.IsStdNoteOff(msg))
+        {
+        NoteOff(msg.data2);
+
+        }
+    }
+
+}
 
 
 

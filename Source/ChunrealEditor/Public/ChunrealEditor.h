@@ -106,6 +106,8 @@ public:
 			TArray<FString> ResultTokens;
 			FFileHelper::LoadFileToStringArrayWithPredicate(ResultTokens, *(WorkingDir + "/" + ChuckFile), [](const FString& Line) { return Line.Contains(TEXT("UCHUCK()")); });
 			bool bIsUChuck = ResultTokens.Num() > 0;
+			FFileHelper::LoadFileToStringArrayWithPredicate(ResultTokens, *(WorkingDir + "/" + ChuckFile), [](const FString& Line) { return Line.Contains(TEXT("UINSTRUMENT()")); });
+			bool bIsUInstrument = ResultTokens.Num() > 0;
 			auto ModifiedTimestamp = FFileManagerGeneric::Get().GetTimeStamp(*(WorkingDir + "/" + ChuckFile));
 			bool bNeedToUpdateCode = false;
 			
@@ -118,13 +120,28 @@ public:
 
 				});
 			
+			bool bAssetExists = false;
+			bool bIsClassMismatched;
 			UChuckCode* ChuckProcessor = nullptr;
 			UE_LOG(LogTemp, Log, TEXT("Index : %d"), ExistingAssetIndex);
 			if (ExistingAssetIndex != INDEX_NONE)
 			{
 				ChuckProcessor = Cast<UChuckCode>(AssetData[ExistingAssetIndex].GetAsset());
+				bIsClassMismatched = bIsUInstrument ? !ChuckProcessor->IsA(UChuckInstrumentCode::StaticClass()) : !ChuckProcessor->IsA(UChuckCode::StaticClass());
+				
+				if (bIsClassMismatched)
+				{
+					UE_LOG(LogTemp, Log, TEXT("Found Chuck file: %s, but it's marked as a different class, deleting."), *ChuckFile);
+					//in theory don't need a dialog, we are going to recreate it with the right subclass
+					ObjectTools::DeleteAssets({ AssetData[ExistingAssetIndex] }, false);
+					AssetData.RemoveAtSwap(ExistingAssetIndex);
+					ExistingAssetIndex = INDEX_NONE;
+					continue;
+				}
+				
 				AssetData.RemoveAtSwap(ExistingAssetIndex);
-				UE_LOG(LogTemp, Log, TEXT("Found Chuck file: %s, already exists as asset."), *ChuckFile);
+				bAssetExists = !bIsClassMismatched;
+				//UE_LOG(LogTemp, Log, TEXT("Found Chuck file: %s, already exists as asset."), *ChuckFile);
 				//if timestamp is different, update the code
 				if (ChuckProcessor->LastModifiedTimestamp != ModifiedTimestamp)
 				{
@@ -136,14 +153,27 @@ public:
 				}
 	
 			}
-			else {
+			 
+			if (!bAssetExists)
+			{
 
 				if (!bIsUChuck)
 				{
 					UE_LOG(LogTemp, Log, TEXT("Found Chuck file: %s, but it's not marked as UCHUCK(), not creating Code proxy object."), *ChuckFile);
 					continue;
 				}
-				UObject* ChuckNewObject = AssetTools.CreateAsset(ChuckName, TEXT("/chunreal/chunreal/RuntimeChucks"), UChuckCode::StaticClass(), Factory);
+				UObject* ChuckNewObject;
+				if (bIsUInstrument)
+				{
+					ChuckNewObject = AssetTools.CreateAsset(ChuckName, TEXT("/chunreal/chunreal/RuntimeChucks"), UChuckInstrumentCode::StaticClass(), Factory);
+
+				}
+				else 
+				{
+					ChuckNewObject = AssetTools.CreateAsset(ChuckName, TEXT("/chunreal/chunreal/RuntimeChucks"), UChuckCode::StaticClass(), Factory);
+
+				}
+				
 				ChuckProcessor = Cast<UChuckCode>(ChuckNewObject);
 				ChuckProcessor->bIsAutoManaged = true;
 				ChuckProcessor->SourcePath = WorkingDir + "/" + ChuckFile;
@@ -258,6 +288,7 @@ private:
 
 	TSharedPtr<FChuckProcessorAssetActions> ChuckInstanceActionsSharedPtr;
 	TSharedPtr<FChuckInstantiationAssetActions> ChuckInstantiationActionsSharedPtr;
+	TSharedPtr<FChuckCodeInstrumentAssetActions> ChuckInstrumentActionsSharedPtr;
 	//TSharedPtr<FChunrealAssetStyles> ChunrealStylesSharedPtr;
 
 	static TSharedRef<SDockTab> SpawnCodeEditorTab(const FSpawnTabArgs& TabArgs)

@@ -32,7 +32,7 @@ public:
 	}
 	FText GetName() const override
 	{
-		return INVTEXT("ChucK Processor");
+		return INVTEXT("ChucK Code");
 	}
 	FColor GetTypeColor() const override
 	{
@@ -44,6 +44,32 @@ public:
 	}
 
 };
+
+//asset actions for UChuckCodeInstrument 
+class FChuckCodeInstrumentAssetActions : public FAssetTypeActions_Base
+{
+public:
+
+	UClass* GetSupportedClass() const override
+	{
+		return UChuckInstrumentCode::StaticClass();
+	}
+	FText GetName() const override
+	{
+		return INVTEXT("ChucK Instrument Code");
+	}
+	FColor GetTypeColor() const override
+	{
+		return FColor::Purple;
+	}
+	uint32 GetCategories() override
+	{
+		return EAssetTypeCategories::Sounds;
+	}
+
+};
+
+
 
 //detail customization
 class FChuckProcessorDetails : public IDetailCustomization

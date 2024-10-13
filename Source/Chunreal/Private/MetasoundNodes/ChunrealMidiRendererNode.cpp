@@ -42,6 +42,13 @@ DEFINE_LOG_CATEGORY_STATIC(LogChucKMidiNode, VeryVerbose, All);
 
 namespace ChunrealMetasounds::ChuckMidiRenderer
 {
+	struct FRawMidiMsg
+	{
+		int8 Status;
+		int8 Data1;
+		int8 Data2;
+	};
+	
 	using namespace Metasound;
 	using namespace HarmonixMetasound;
 
@@ -251,12 +258,15 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		void HandleMidiMessage(FMidiVoiceId InVoiceId, int8 InStatus, int8 InData1, int8 InData2, int32 InEventTick, int32 InCurrentTick, float InMsOffset)
 		{
 			using namespace Harmonix::Midi::Constants;
+			int32 Status = InStatus;
 			int8 InChannel = InStatus & 0xF;
 			FScopeLock Lock(&sNoteActionCritSec);
 			switch (InStatus & 0xF0)
 			{
 			case GNoteOff:
-		
+				RawMsgData1.Add((int64) 128);
+				RawMsgData2.Add((int64) InData1);
+				RawMsgData3.Add((int64) InData2);
 				//EpicSynth1.NoteOff(InData1);
 				break;
 			case GNoteOn:
@@ -264,9 +274,12 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 				//UE_LOG(LogChucKMidiNode, VeryVerbose, TEXT("Note On: %d"), InData1);
 		
 				//by adressing the ChucK pointer directly we may avoid all the ID related collision
-				theChuck->globals()->setGlobalFloat("noteFreq", (float)InData1);
-				theChuck->globals()->broadcastGlobalEvent("noteEvent");
-
+				//theChuck->globals()->setGlobalFloat("noteFreq", (float)InData1);
+				//theChuck->globals()->broadcastGlobalEvent("noteEvent");
+				RawMsgData1.Add((int64) 144);
+				RawMsgData2.Add((int64) InData1);
+				RawMsgData3.Add((int64) InData2);
+		
 
 
 				//EpicSynth1.NoteOn(InData1, (float) InData2);
@@ -292,6 +305,9 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		{
 			const int32 BlockSizeFrames = AudioOutLeft->Num();
 			PendingNoteActions.Empty();
+			RawMsgData1.Empty();
+			RawMsgData2.Empty();
+			RawMsgData3.Empty();
 
 
 			Audio::FAlignedFloatBuffer AlignedBufferLeft(*Inputs.AudioInLeft);
@@ -363,9 +379,13 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 
 					{
 						const FMidiMsg& MidiMessage = (*MidiEventIterator).MidiMessage;
+						//to pass the data to chuck
+				
+
 						if (MidiMessage.IsStd()  && (*MidiEventIterator).TrackIndex == CurrentTrackNumber)
 						{
-							
+
+
 							HandleMidiMessage(
 								(*MidiEventIterator).GetVoiceId(),
 								MidiMessage.GetStdStatus(),
@@ -417,12 +437,31 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 			//I'm not really seeing performance improvements with the interleaving methods but it's a little cleaner
 			Audio::ArrayInterleave({AlignedBufferLeft, AlignedBufferRight }, InterleavedBuffer);
 
+			if (RawMsgData1.Num() > 0)
+			{
+				//ProcessMidiMessage(MidiMsg);
+				//set HmxData1, HmxData2, HmxData3
+				theChuck->globals()->setGlobalIntArray("HmxData1", (t_CKINT*)RawMsgData1.GetData(), RawMsgData1.Num());
+				theChuck->globals()->setGlobalIntArray("HmxData2", (t_CKINT*)RawMsgData2.GetData(), RawMsgData2.Num());
+				theChuck->globals()->setGlobalIntArray("HmxData3", (t_CKINT*)RawMsgData3.GetData(), RawMsgData3.Num());
+
+				//broadcast event
+				theChuck->globals()->broadcastGlobalEvent("HarmonixMidi");
+
+
+
+			}
+
+
 			//Process samples by ChucK
 			FChunrealModule::RunChuck(ChuckInstance.GetProxy()->ChuckInstance->ChuckVm, InterleavedBuffer.GetData(), ChuckOutputInterleavedBuffer.GetData(), BlockSizeFrames);
 	
 			DeinterleaveBuffOutArray[0] = AudioOutLeft->GetData();
 			DeinterleaveBuffOutArray[1] = AudioOutRight->GetData();
 
+			//theChuck->globals()->setGlobalIntArray("HmxData1", (t_CKINT*)TArray<int32>().GetData(), 0);
+			//theChuck->globals()->setGlobalIntArray("HmxData2", (t_CKINT*)TArray<int32>().GetData(), 0);
+			//theChuck->globals()->setGlobalIntArray("HmxData3", (t_CKINT*)TArray<int32>().GetData(), 0);
 
 
 			Audio::ArrayDeinterleave(ChuckOutputInterleavedBuffer.GetData(), DeinterleaveBuffOutArray.GetData(), BlockSizeFrames, 2);
@@ -472,6 +511,11 @@ namespace ChunrealMetasounds::ChuckMidiRenderer
 		int32 CurrentTrackNumber = 0;
 		int32 CurrentChannelNumber = 0;
 		bool MadeAudioLastFrame = false;
+
+
+		TArray<int64> RawMsgData1;
+		TArray<int64> RawMsgData2;
+		TArray<int64> RawMsgData3;
 
 		TArray<FPendingNoteAction> PendingNoteActions;
 		FMIDINoteStatus NoteStatus[Harmonix::Midi::Constants::GMaxNumNotes];

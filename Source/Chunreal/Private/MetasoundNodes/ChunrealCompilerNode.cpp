@@ -295,10 +295,10 @@ namespace ChunrealMetasounds::ChuckCompiler
 				CurrentChuckCodeProxy = Inputs.ChuckInstance->GetProxy();
 				//if we have a chuck code asset, we produce an instantiation for it, this takes care of compilation
 				ChuckInstance = CurrentChuckCodeProxy->ChuckProcessor->SpawnChuckInstance();
-				ChuckInstance->bAddMidiDependencies = true;
+	
 				Audio::FProxyDataInitParams InitParams;
 				auto NewInstanceProxy = FChuckInstance(ChuckInstance->CreateProxyData(InitParams));
-				//NewProxy.ChuckInstance = NewInstantiation;
+
 				Outputs.ChuckInstanceOut->operator=(NewInstanceProxy);
 
 

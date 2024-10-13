@@ -2,6 +2,9 @@
 // Author: Amir Ben-Kiki 
 // This will will be a bit of a template for ChucK instruments in unreal 
 
+
+
+
 global Event noteEvent;
 global float noteFreq;
 

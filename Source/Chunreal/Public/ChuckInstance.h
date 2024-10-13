@@ -206,6 +206,17 @@ private:
 	
 };
 
+UCLASS(BlueprintType)
+class CHUNREAL_API UChuckInstrumentCode : public UChuckCode
+{
+	GENERATED_BODY()
+
+public:
+
+	FString Test;
+
+};
+
 class CHUNREAL_API FChuckCodeProxy : public Audio::TProxyData<FChuckCodeProxy>
 {
 public:
@@ -294,10 +305,7 @@ class CHUNREAL_API UChuckInstantiation : public UObject, public IAudioProxyDataF
 
 
 public:
-	bool bAddMidiDependencies = false;
 
-	//UChuckInstantiation(bool bAddMidiDependencies);
-	
 	UChuckInstantiation();
 
 	~UChuckInstantiation();

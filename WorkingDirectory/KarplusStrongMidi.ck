@@ -1,6 +1,6 @@
 // tuned plucked string filter
 // Ge Wang (gewang@cs.princeton.edu)
-
+//UINCLUDE("ABK-HmxMidi/HmxMidi.ck");
 
 //UCHUCK();
 
@@ -23,26 +23,43 @@ allpass => Delay delay => lowpass;
 //0 => delay.gain;
 // our radius
 .99999 => float R;
-<<<  second / samp >>> ;
-// place zero
-while(true)
+
+global HmxMidiIn HarmonixMidi;
+MidiMsg msg;
+
+while( true )
 {
- 	 noteEvent => now;
-//<<< "Received Note in Chuck!", noteFreq >>>;
--1 => lowpass.zero;
-// fire excitation
-0.4 => imp.gain;
-// finding our (integer) delay order
-Std.mtof( noteFreq ) => setFreq => float L;
-// set delay
-L::samp => delay.delay;
-// set dissipation factor
-Math.pow( R, L ) => delay.gain;
-// for one delay round trip
-L::samp => now;
-// done
-0 => imp.gain;
+    HarmonixMidi => now;
+
+    while(HarmonixMidi.recv(msg))
+    {
+       if(HarmonixMidi.IsStdNoteOn(msg))
+       {
+        //NoteOn(msg.data2, msg.data3);
+        //<<< "Received Note in Chuck!", noteFreq >>>;
+        -1 => lowpass.zero;
+        // fire excitation
+        0.4 => imp.gain;
+        // finding our (integer) delay order
+        Std.mtof( msg.data2 ) => setFreq => float L;
+        // set delay
+        L::samp => delay.delay;
+        // set dissipation factor
+        Math.pow( R, L ) => delay.gain;
+        // for one delay round trip
+        L::samp => now;
+        // done
+        0 => imp.gain;
+       }
+       else if(HarmonixMidi.IsStdNoteOff(msg))
+        {
+        //NoteOff(msg.data2);
+
+        }
+    }
+
 }
+
 // advance time
 //(Math.log(.0001) / Math.log(R))::samp => now; TEST WHATEVER 12
 

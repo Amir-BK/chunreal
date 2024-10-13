@@ -5,6 +5,9 @@
 #include "Chunreal/chuck/chuck_globals.h"
 #include "HAL/PlatformApplicationMisc.h"
 
+
+#define CHUGIN_PLATFORM_DIR TEXT("chugins-win64")
+
 // Inherited via IAudioProxyDataFactory
 
 static TAutoConsoleVariable<int32> ChuckLogLevel(TEXT("Chuck.LogLevel"), 2, TEXT("ChucK log level"), ECVF_Default);
@@ -40,7 +43,7 @@ ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 	theChuck = new ChucK();
 	theChuck->setLogLevel(ChuckLogLevel.GetValueOnAnyThread());
 	//Initialize Chuck params
-	theChuck->setParam(CHUCK_PARAM_CHUGIN_DIRECTORY, TCHAR_TO_UTF8(*FPaths::Combine(*ChunrealModule.workingDirectory, TEXT("chugins"))));
+	theChuck->setParam(CHUCK_PARAM_CHUGIN_DIRECTORY, TCHAR_TO_UTF8(*FPaths::Combine(*ChunrealModule.workingDirectory, CHUGIN_PLATFORM_DIR)));
 	theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, PlatformSampleRate);
 	theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, InNumChannels);
 	theChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, InNumChannels);
@@ -84,7 +87,7 @@ inline UChuckInstantiation::UChuckInstantiation()
 		ParentChuckCode = CastChecked<UChuckCode>(GetOuter());
 		ParentChuckCode->OnChuckNeedsRecompile.AddUObject(this, &UChuckInstantiation::OnChuckCodeAssetChanged);
 		CompileCode();
-		//bAutoActivate = true;
+
 	}
 
 
