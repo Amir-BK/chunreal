@@ -37,7 +37,7 @@ public class HmxMidiIn extends Event
 
 	fun int IsStdNoteOn(MidiMsg msg)
 	{
-		if (msg.data1 >= 144)
+		if (msg.data1 == 144)
 		{
 			if(msg.data3 > 0)
 			{
@@ -52,12 +52,12 @@ public class HmxMidiIn extends Event
 
 	fun int IsStdNoteOff(MidiMsg msg)
 	{
-		if (msg.data1 >= 128)
+		if (msg.data1 == 128)
 		{
 			return true;
 		}
 
-		if (msg.data1 >= 144)
+		if (msg.data1 == 144)
 		{
 			if(msg.data3 == 0)
 			{
