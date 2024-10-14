@@ -4,21 +4,18 @@ Support and Feedback (for this fork)
 https://discord.gg/EWFKWTz3
 
 Status:
-2. Reading/writing global variables via ChuckID is not possible when using the 'new style' processor
-3. work in progress - real time chuck code editor, monitors the chuck files in the WorkingDirectory and automatically recompiles the chuck vm on changes, with a nice in-game widget
 
 https://github.com/user-attachments/assets/88edb1d8-1f97-4d69-8c2e-0e19875bf209
 
-
-4. ChucK Processors can now be applied as Source and Submix effect in preset chains.  
+ChucK Processors can now be applied as Source and Submix effect in preset chains.  
 
 https://github.com/user-attachments/assets/accddb23-fffd-4d21-80f7-6d6ad3640467
 
-5. Real time parameter getters and setters within metasounds - 
+Real time parameter getters and setters within metasounds - 
 
 https://github.com/user-attachments/assets/780c46c0-8e04-432e-936f-ac7ac1afeca2
 
-6. Execute and Listen to Chuck events from BP or metasounds -
+Execute and Listen to Chuck events from BP or metasounds -
 
 https://github.com/user-attachments/assets/d0448a87-2391-456c-b007-1e897b20202f
 
