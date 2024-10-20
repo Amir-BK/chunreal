@@ -1,7 +1,8 @@
 // Chunreal Midi Drum Synth
 // Author: Amir Ben-Kiki 
 // This will will be a bit of a template for ChucK instruments in unreal 
-
+//UCHUCK();
+//UINCLUDE("ABK-HmxMidi/HmxMidi.ck");
 
 
 
@@ -19,7 +20,7 @@ SndBuf snare=> g =>   dac;
 SndBuf hihat => g => dac;
 
 snare => Delay delay(0.3::second, 0.1::second) => g2 => dac;
-hihat => Delay delay1(0.3::second, 0.1::second) => g2 => dac;
+hihat =>  g2 => dac;
 1 => g2.gain;
 0.5 => delay.gain;
 // read files, we use me.dir() + "path_in_side_working_directory" syntax to get relative file paths that we can package with the plugin or a game
@@ -35,35 +36,47 @@ snare.samples() => snare.pos;
 hihat.samples() => hihat.pos;
 0.3 => hihat.gain;
 
+fun void NoteOn( int m, int v )
+{
+   // v * 1.0 / 128 => float velocity;
+   // e.noteOn( m, velocity );
 
-// infinite time-loop
+	if(m == 36)
+		{
+		0 => kick.pos;
+		}
+
+	if(m==38)
+		{
+		0 => snare.pos;
+		}
+
+	if(m==42)
+		{
+		0 => hihat.pos;
+		}
+	    //<<< "on", m, v >>>;
+}
+
+
+global HmxMidiIn HarmonixMidi;
+MidiMsg msg;
+
 while( true )
 {
-    //whenever the noteEvent is called we 
-    noteEvent => now;
-    play( noteFreq, Std.rand2f( .6, .9 ) );
+    HarmonixMidi => now;
 
-
-}
-// test 
-// basic play function (add more arguments as needed)
-fun void play( float note, float velocity )
-{
-   // <<< "chuck drum note" , note >>>;
-    // soon we'll check the velocity but for now just set the pos of the kick to 0
-    if(note == 36)
+    while(HarmonixMidi.recv(msg))
     {
-           00=>kick.pos;
+       if(HarmonixMidi.IsStdNoteOn(msg))
+       {
+        NoteOn(msg.data2, msg.data3);
+       }
+       else if(HarmonixMidi.IsStdNoteOff(msg))
+        {
+       // NoteOff(msg.data2);
+
+        }
     }
 
-    if(note == 38)
-    {
-        00=>snare.pos;
-    }
-
-    if(note == 42)
-    {
-        00=>hihat.pos;
-    }
- 
 }
