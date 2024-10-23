@@ -25,7 +25,7 @@ namespace ChunrealEventRegistry
 	static int EventIdCounter = 0;
 }
 
-inline TSharedPtr<Audio::IProxyData> UChuckCode::CreateProxyData(const Audio::FProxyDataInitParams& InitParams)
+TSharedPtr<Audio::IProxyData> UChuckCode::CreateProxyData(const Audio::FProxyDataInitParams& InitParams)
 {
 
 	return MakeShared<FChuckCodeProxy>(this);
@@ -79,7 +79,7 @@ ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 
 
 
-inline UChuckInstantiation::UChuckInstantiation()
+ UChuckInstantiation::UChuckInstantiation()
 {
 	// Must be created by a valid ChuckCode object
 	if (!IsTemplate()) {
@@ -93,7 +93,7 @@ inline UChuckInstantiation::UChuckInstantiation()
 
 }
 
-inline UChuckInstantiation::~UChuckInstantiation()
+ UChuckInstantiation::~UChuckInstantiation()
 {
 	if (ChuckVm)
 	{
@@ -118,12 +118,12 @@ int UChuckInstantiation::SubscribeToGlobalEvent(FString EventName, const FOnGlob
 		EventTuple.Value.ExecuteIfBound(EventTuple.Key);
 		};
 
-	const char* EventNameChar = TCHAR_TO_ANSI(*EventName);
+//const char* EventNameChar = ;
 	//add to global static map
 	auto EventTuple = TTuple<FString, FOnGlobalEventExecuted>(EventName, InDelegate);
 	ChunrealEventRegistry::EventDelegates.Add(TTuple<t_CKINT, TTuple<FString, FOnGlobalEventExecuted>>(EventID, EventTuple));
 
-	ChuckVm->globals()->listenForGlobalEvent(EventNameChar, EventID, (EventCallBack), (t_CKBOOL)(true));
+	ChuckVm->globals()->listenForGlobalEvent(TCHAR_TO_ANSI(*EventName), EventID, (EventCallBack), (t_CKBOOL)(true));
 
 	return EventID;
 
@@ -137,12 +137,12 @@ int UChuckInstantiation::SubscribeToGlobalEventNative(FString EventName, const F
 		EventTuple.Value.ExecuteIfBound(EventTuple.Key);
 		};
 
-	const char* EventNameChar = TCHAR_TO_ANSI(*EventName);
+	//const char* EventNameChar = ;
 	//add to global static map
 	auto EventTuple = TTuple<FString, FOnGlobalEventExecutedNative>(EventName, InDelegate);
 	ChunrealEventRegistry::NativeEventDelegates.Add(TTuple<t_CKINT, TTuple<FString, FOnGlobalEventExecutedNative>>(EventID, EventTuple));
 
-	ChuckVm->globals()->listenForGlobalEvent(EventNameChar, EventID, (EventCallBack), (t_CKBOOL)(true));
+	ChuckVm->globals()->listenForGlobalEvent(TCHAR_TO_ANSI(*EventName), EventID, (EventCallBack), (t_CKBOOL)(true));
 	
 	
 	return EventID;

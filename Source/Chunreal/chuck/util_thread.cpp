@@ -276,8 +276,8 @@ XWriteThread * XWriteThread::shared()
 XWriteThread::XWriteThread(size_t data_buffer_size, size_t msg_buffer_size)
     :
     m_data_buffer(new FastCircularBuffer),
-    m_msg_buffer(new CircularBuffer<Message>(msg_buffer_size)),
-    m_thread_buffer(new t_CKBYTE[data_buffer_size])
+m_thread_buffer(new t_CKBYTE[data_buffer_size]),
+m_msg_buffer(new CircularBuffer<Message>(msg_buffer_size))
 {
     m_data_buffer->initialize( data_buffer_size, sizeof(char) );
     m_thread_exit = FALSE;

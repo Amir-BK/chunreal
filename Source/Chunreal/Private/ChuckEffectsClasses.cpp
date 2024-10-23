@@ -1,6 +1,6 @@
 #include "ChuckEffectsClasses.h"
 
-inline void FSourceEffectChuck::OnPresetChanged()
+void FSourceEffectChuck::OnPresetChanged()
 {
 	GET_EFFECT_SETTINGS(SourceEffectChuck)
 

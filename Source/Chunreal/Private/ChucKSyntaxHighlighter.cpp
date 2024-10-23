@@ -432,18 +432,18 @@ private:
 
 
 
-inline TSharedRef<FChucKSyntaxHighlighterMarshaller> FChucKSyntaxHighlighterMarshaller::Create(const FSyntaxTextStyle& InSyntaxTextStyle)
+ TSharedRef<FChucKSyntaxHighlighterMarshaller> FChucKSyntaxHighlighterMarshaller::Create(const FSyntaxTextStyle& InSyntaxTextStyle)
 {
 	return MakeShareable(new FChucKSyntaxHighlighterMarshaller(CreateTokenizer(), InSyntaxTextStyle));
 
 }
 
-inline TSharedPtr<ISyntaxTokenizer> FChucKSyntaxHighlighterMarshaller::CreateTokenizer()
+ TSharedPtr<ISyntaxTokenizer> FChucKSyntaxHighlighterMarshaller::CreateTokenizer()
 {
 	return FChucKSyntaxTokenizer::Create();
 }
 
-inline void FChucKSyntaxHighlighterMarshaller::ParseTokens(const FString& SourceString, FTextLayout& TargetTextLayout, TArray<ISyntaxTokenizer::FTokenizedLine> TokenizedLines)
+ void FChucKSyntaxHighlighterMarshaller::ParseTokens(const FString& SourceString, FTextLayout& TargetTextLayout, TArray<ISyntaxTokenizer::FTokenizedLine> TokenizedLines)
 {
 	TArray<FTextLayout::FNewLineData> LinesToAdd;
 	LinesToAdd.Reserve(TokenizedLines.Num());
