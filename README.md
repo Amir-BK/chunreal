@@ -45,6 +45,55 @@ At the moment (a matter of days if not hours) it is the 'Chuck Project Editor' t
 
 This system also allows keeping the .ck files as source files outside unreal, for more easily working with revision control, right now the Chuck working directory is set to a directory inside the plugin folder, it can be changed in code, eventually I'll expose it in the project settings. 
 
+### pseudo-includes and unreal discovery
+
+As before ChucK 1.5.4 the only way to import files was using the machine.add command inside chuck I created a rudimentary framework to include chuck files and discover them in unreal, to make the chuck compiler ignore these directives they are marked in comments in the .ck file, as the plugin is still not updated to the new chuck version and as the new @import directive is not fully equivalent to the old machine.add for now these psuedo-includes are still used.
+
+```
+//UCHUCK(); -- Marks the chuck file for discovery in unreal
+//UINSTRUMENT(); -- marks the file as an instrument, right now this doesn't make much of a difference but might help with categorization and search within unreal
+//UINCLUDE("ABK-HmxMidi/HmxMidi.ck"); -- an example of an include directive that executes 'machine add' before the the main chuck file is executed.
+
+```
+
+### Receiving harmonix midi streams in chuck instruments 
+
+The HmxMidi.ck is a simple chuck class that exposes three global int arrays and some methods for interactions with the harmonix midi stream similar to the standard MidiIn object, it needs to be included as a UINCLUDE in the chuck file, afterwards it can be used like this in order to trigger notes in the:
+
+```
+//UINCLUDE("ABK-HmxMidi/HmxMidi.ck");
+
+global HmxMidiIn HarmonixMidi;
+MidiMsg msg;
+
+while( true )
+{
+    HarmonixMidi => now;
+
+    while(HarmonixMidi.recv(msg))
+    {
+       if(HarmonixMidi.IsStdNoteOn(msg))
+       {
+        //NoteOn(msg.data2, msg.data3);
+        //Do note on stuff 
+       }
+       else if(HarmonixMidi.IsStdNoteOff(msg))
+        {
+        //NoteOff(msg.data2);
+        //Do note off stuff 
+        }
+    }
+
+}
+
+```
+
+The polyphonic instrument framework uses Jack Atherton's TimbreLibrary classes as a framework and several of his instruments are included. 
+
+### Chugins
+Chugins should be added to the appropriate folder in the working directory, I included the compiled chugins for win64 but for other platforms they needed to be added, some of the instruments use GVerb so they might not work on Macos unless you add the mac chugins to the build.cs file for the chunreal module. 
+
+
 ### Manual creation (to be redesigned - Section oudated)
 
 Instead of assigning the code via blueprints there's a new 'Chuck Processor' asset that can be created via the content browser - 
