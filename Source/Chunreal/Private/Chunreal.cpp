@@ -37,8 +37,8 @@ void FChunrealModule::StartupModule()
 
 	chuckParent->setParam(CHUCK_PARAM_WORKING_DIRECTORY, TCHAR_TO_UTF8(*workingDirectory));
 	//set chugin directory
-	chuckParent->setParam(CHUCK_PARAM_CHUGIN_LIST_USER_DIR, TCHAR_TO_UTF8(*FPaths::Combine(*workingDirectory, TEXT("chugins"))));
-	chuckParent->setParam(CHUCK_PARAM_CHUGIN_DIRECTORY, TCHAR_TO_UTF8(*FPaths::Combine(*workingDirectory, TEXT("chugins"))));
+	chuckParent->setParam(CHUCK_PARAM_USER_CHUGINS, TCHAR_TO_UTF8(*FPaths::Combine(*workingDirectory, TEXT("chugins"))));
+	//chuckParent->setParam(CHUCK_PARAM_CHUGIN_DIRECTORY, TCHAR_TO_UTF8(*FPaths::Combine(*workingDirectory, TEXT("chugins"))));
     //Initialize Chuck params
     chuckParent->setParam(CHUCK_PARAM_SAMPLE_RATE, PlatformSampleRate);
     chuckParent->setParam(CHUCK_PARAM_INPUT_CHANNELS, 2);
@@ -63,16 +63,6 @@ void FChunrealModule::StartupModule()
     //Start ChucK parent
     chuckParent->init();
     chuckParent->start();
-
-	//get chugin directory and print it
-	UE_LOG(LogChunreal, Log, TEXT("Chugin directory: %s"), ANSI_TO_TCHAR(chuckParent->getParamString(CHUCK_PARAM_CHUGIN_DIRECTORY).c_str()));
-
-	auto UserDirStringList = chuckParent->getParamStringList(CHUCK_PARAM_CHUGIN_LIST_USER_DIR);
-	for (auto& UserDir : UserDirStringList)
-	{
-		UE_LOG(LogChunreal, Log, TEXT("User Chugin directory: %s"), ANSI_TO_TCHAR(UserDir.c_str()));
-
-	}
 
 
     //Set log

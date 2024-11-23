@@ -9,6 +9,8 @@
 //       removeOldestElem: returns voice, or -1 if not found
 // author: Jack Atherton
 
+@import "chugins-win64/GVerb.chug"
+
 class IntElem
 {
     int val;
@@ -798,8 +800,8 @@ class BubblePluckVoice extends VoiceBankVoice
     
     // LPF cutoff envelope
     ADSR lpfEnv => blackhole;
-    0.349 => float lpfSustain;
-    240::ms => dur lpfDecay;
+    0.3 => float lpfSustain;
+    480::ms => dur lpfDecay;
     lpfEnv.set( 1::ms, lpfDecay, lpfSustain, 7700::ms );
     
     fun void triggerLPFEnv()

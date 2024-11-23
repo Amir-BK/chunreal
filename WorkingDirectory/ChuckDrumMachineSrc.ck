@@ -11,6 +11,8 @@ global float noteFreq;
 
 //
 
+@import "chugins-win64/GVerb.chug"
+
 // set up patch and samples, outside the main loop, happens once:
 Gain g => dac; // create a mixer and send it to the output buffer 
 Gain g2 => dac;
@@ -18,8 +20,8 @@ Gain g2 => dac;
 SndBuf kick => g => dac;
 SndBuf snare=> g =>   dac;
 SndBuf hihat => g => dac;
-
-snare => Delay delay(0.3::second, 0.1::second) => g2 => dac;
+ Delay delay(0.3::second, 0.1::second);
+snare =>  g2 => dac;
 hihat =>  g2 => dac;
 1 => g2.gain;
 0.5 => delay.gain;
@@ -40,18 +42,18 @@ fun void NoteOn( int m, int v )
 {
    // v * 1.0 / 128 => float velocity;
    // e.noteOn( m, velocity );
-
+	<<< m >>>;
 	if(m == 36)
 		{
 		0 => kick.pos;
 		}
 
-	if(m==38)
+	if(m==44)
 		{
 		0 => snare.pos;
 		}
 
-	if(m==42)
+	if(m==59)
 		{
 		0 => hihat.pos;
 		}

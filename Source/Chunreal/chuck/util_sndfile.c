@@ -8008,32 +8008,15 @@ psf_fopen (SF_PRIVATE *psf, const char *pathname, int open_mode)
 				return psf->error ;
 		} ;
 
-
-#ifdef UNICODE 1
-	//convert to unicode
-
-	wchar_t wpathname[MAX_PATH];
-	MultiByteToWideChar(CP_ACP, 0, pathname, -1, wpathname, MAX_PATH);
-#define pathname wpathname
-
-#endif
-
-	handle = CreateFile(
-		pathname,					/* pointer to name of the file */
-		dwDesiredAccess,			/* access (read-write) mode */
-		dwShareMode,				/* share mode */
-		0,							/* pointer to security attributes */
-		dwCreationDistribution,		/* how to create */
-		FILE_ATTRIBUTE_NORMAL,		/* file attributes (could use FILE_FLAG_SEQUENTIAL_SCAN) */
-		NULL						/* handle to file with attributes to copy */
-	);
-
-#ifdef pathname
-#undef pathname
-#endif // pathname
-
-
-
+	handle = CreateFileA (              /* (ge & eito) explicitly use ANSI version of CreateFile | 1.5.3.2 */
+			pathname,					/* pointer to name of the file */
+			dwDesiredAccess,			/* access (read-write) mode */
+			dwShareMode,				/* share mode */
+			0,							/* pointer to security attributes */
+			dwCreationDistribution,		/* how to create */
+			FILE_ATTRIBUTE_NORMAL,		/* file attributes (could use FILE_FLAG_SEQUENTIAL_SCAN) */
+			NULL						/* handle to file with attributes to copy */
+			) ;
 
 	if (handle == INVALID_HANDLE_VALUE)
 	{	psf_log_syserr (psf, GetLastError ()) ;

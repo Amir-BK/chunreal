@@ -1,6 +1,8 @@
 // stereo reverb
 //adc =>  NRev  revL => dac;
 
+@import "chugins-win64/GVerb.chug"
+
 adc.left => Gain gL =>  GVerb     revL  =>  dac.left;
 adc.right => Gain gR =>  GVerb     revR => dac.right;
 

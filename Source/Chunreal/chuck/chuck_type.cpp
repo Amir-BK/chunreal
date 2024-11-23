@@ -1,25 +1,26 @@
 /*----------------------------------------------------------------------------
   ChucK Strongly-timed Audio Programming Language
-    Compiler and Virtual Machine
+    Compiler, Virtual Machine, and Synthesis Engine
 
   Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  it under the dual-license terms of EITHER the MIT License OR the GNU
+  General Public License (the latter as published by the Free Software
+  Foundation; either version 2 of the License or, at your option, any
+  later version).
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful and/or
+  interesting, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  MIT Licence and/or the GNU General Public License for details.
 
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-  U.S.A.
+  You should have received a copy of the MIT License and the GNU General
+  Public License (GPL) along with this program; a copy of the GPL can also
+  be obtained by writing to the Free Software Foundation, Inc., 59 Temple
+  Place, Suite 330, Boston, MA 02111-1307 U.S.A.
 -----------------------------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
@@ -100,6 +101,10 @@ t_CKBOOL type_engine_check_func_def( Chuck_Env * env, a_Func_Def func_def );
 t_CKBOOL type_engine_check_class_def( Chuck_Env * env, a_Class_Def class_def );
 
 // helpers
+void type_engine_init_op_overload_builtin( Chuck_Env * env );
+// update builtin durs according to sample rate
+t_CKBOOL type_engine_update_builtin_durs( Chuck_Env * env, t_CKUINT srate );
+// check for const
 Chuck_Value * type_engine_check_const( Chuck_Env * env, a_Exp exp );
 // convert dot member expression to string for printing
 string type_engine_print_exp_dot_member( Chuck_Env * env, a_Exp_Dot_Member member );
@@ -110,6 +115,10 @@ a_Func_Def make_dll_as_fun( Chuck_DL_Func * dl_fun, t_CKBOOL is_static, t_CKBOOL
 // make a partial deep copy, to separate type systems from AST
 a_Func_Def partial_deep_copy_fn( a_Func_Def f );
 a_Arg_List partial_deep_copy_args( a_Arg_List args );
+// create new array type
+Chuck_Type * create_new_array_type( Chuck_Env * env, Chuck_Type * array_parent,
+                                    t_CKUINT depth, Chuck_Type * base_type
+                                    /*, Chuck_Namespace * owner_nspc*/ );
 
 // helper macros
 #define CK_LR( L, R )      if( (left->xid == L) && (right->xid == R) )
@@ -315,9 +324,7 @@ void Chuck_Env::reset()
     // TODO: release stack items?
     nspc_stack.clear();
     // push global namespace
-    nspc_stack.push_back( this->global() );
-    // push user namespace
-    if( user_nspc != NULL ) nspc_stack.push_back( this->user_nspc );
+    nspc_stack.push_back( global_nspc );
     // TODO: release stack items?
     class_stack.clear(); class_stack.push_back( NULL );
     // should be at top level
@@ -326,8 +333,8 @@ void Chuck_Env::reset()
     // release curr? class_def? func?
     // 1.5.0.1 (ge) don't think these need ref counts; they are used as temporary variables
 
-    // assign
-    curr = (user_nspc != NULL) ? this->user() : this->global();
+    // current namesapce
+    curr = (user_nspc != NULL) ? user_nspc : global_nspc;
     // clear
     class_def = NULL; func = NULL;
 
@@ -348,11 +355,9 @@ void Chuck_Env::reset()
 void Chuck_Env::load_user_namespace()
 {
     // user namespace
-    user_nspc = new Chuck_Namespace;
-    user_nspc->name = "[user]";
-    user_nspc->parent = global_nspc;
-    CK_SAFE_ADD_REF(global_nspc);
-    CK_SAFE_ADD_REF(user_nspc);
+    user_nspc = new Chuck_Namespace; CK_SAFE_ADD_REF(user_nspc);
+    user_nspc->name = "@[user]";
+    user_nspc->parent = global_nspc; CK_SAFE_ADD_REF(global_nspc);
 }
 
 
@@ -369,11 +374,13 @@ void Chuck_Env::clear_user_namespace()
     // clean up user namesapce
     CK_SAFE_RELEASE( user_nspc );
     // load new user namespace
-    load_user_namespace();
+    this->load_user_namespace();
     // reset it
     this->reset();
     // reset operator overloads, including public (env->reset() only resets local)
-    op_registry.reset2public();
+    this->op_registry.reset2public();
+    // reset @import registry | 1.5.4.0 (ge) added
+    this->compiler()->imports()->clearAllUserImports();
 }
 
 
@@ -414,12 +421,16 @@ Chuck_Namespace * Chuck_Env::global() { return global_nspc; }
 
 //-----------------------------------------------------------------------------
 // name: user()
-// desc: get user namespace, if there is one (if not, return global)
+// desc: get user namespace
 //-----------------------------------------------------------------------------
 Chuck_Namespace * Chuck_Env::user()
 {
+    // always return user namespace (even NULL) | 1.5.4.0 (ge) changed for clarity
+    return user_nspc;
+
+    // previously:
     // check if we have a user namespace here
-    return user_nspc != NULL ? user_nspc : global();
+    // return user_nspc != NULL ? user_nspc : global();
 }
 
 
@@ -448,7 +459,7 @@ t_CKBOOL type_engine_init_special( Chuck_Env * env, Chuck_Type * objT )
     initialize_object( objT, env->ckt_class, NULL, env->vm() );
 
     // ensure namespace allocation
-    if( objT->info == NULL )
+    if( objT->nspc == NULL )
     {
         EM_error3( "[chuck]: internal error initializing base class '%s'", objT->base_name.c_str() );
         return FALSE;
@@ -457,7 +468,7 @@ t_CKBOOL type_engine_init_special( Chuck_Env * env, Chuck_Type * objT )
     // vector of func
     vector<Chuck_Func *> funcs;
     // get funcs in Object (FALSE means don't include mangled duplicates)
-    objT->info->get_funcs( funcs, FALSE );
+    objT->nspc->get_funcs( funcs, FALSE );
     // iterate through
     for( t_CKINT i = 0; i < funcs.size(); i++ )
     {
@@ -474,6 +485,86 @@ t_CKBOOL type_engine_init_special( Chuck_Env * env, Chuck_Type * objT )
         }
     }
 
+    return TRUE;
+}
+
+
+
+//-----------------------------------------------------------------------------
+// name: type_engine_update_builtin_dur()
+// desc: update a specific base duration value
+//-----------------------------------------------------------------------------
+t_CKBOOL type_engine_update_builtin_dur( Chuck_Env * env,
+                                         const string & name, t_CKDUR value )
+{
+    // lookup the value
+    Chuck_Value * v = env->global()->value.lookup( name );
+    // check if we found a value
+    if( !v )
+    {
+        EM_error2( 0, "(internal error) cannot find base dur value '%s' in update_builtin_dur()", name.c_str() );
+        return FALSE;
+    }
+    // check if the value is a dur
+    if( !equals( v->type, env->ckt_dur ) )
+    {
+        EM_error2( 0, "(internal error) type mismatch for '%s' in update_builtin_dur()", name.c_str() );
+        return FALSE;
+    }
+    // cast out the dur
+    t_CKDUR * pDur = (t_CKDUR *)v->addr;
+    // check the addr
+    if( pDur == NULL )
+    {
+        EM_error2( 0, "(internal error) NULL address for '%s' in update_builtin_dur()", name.c_str() );
+        return FALSE;
+    }
+    // update it to the new value
+    *pDur = value;
+    // done
+    return TRUE;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// callback from VM
+//-----------------------------------------------------------------------------
+void type_engine_on_srate_update_cb( t_CKUINT srate, void * userdata )
+{ type_engine_update_builtin_durs( (Chuck_Env *)userdata, srate ); }
+//-----------------------------------------------------------------------------
+// name: type_engine_update_builtin_durs()
+// desc: update built-in durations, given a sample rate
+//       NOTE: this should be called whenever the system sample rate changes
+//-----------------------------------------------------------------------------
+t_CKBOOL type_engine_update_builtin_durs( Chuck_Env * env, t_CKUINT srate )
+{
+    // dur value
+    t_CKDUR samp = 1.0;
+    // TODO:
+    t_CKDUR second = srate * samp;
+    // t_CKDUR second = 44100 * samp;
+    t_CKDUR ms = second / 1000.0;
+    t_CKDUR minute = second * 60.0;
+    t_CKDUR hour = minute * 60.0;
+    t_CKDUR day = hour * 24.0;
+    t_CKDUR week = day * 7.0;
+    // one billion years, a very long time
+    // length of a sidereal year; https://en.wikipedia.org/wiki/Year
+    t_CKDUR eon = day * 365.256363004 * 1000000000.0;
+
+    // update
+    if( !type_engine_update_builtin_dur( env, "samp", samp ) ) return FALSE;
+    if( !type_engine_update_builtin_dur( env, "ms", ms ) ) return FALSE;
+    if( !type_engine_update_builtin_dur( env, "second", second ) ) return FALSE;
+    if( !type_engine_update_builtin_dur( env, "minute", minute ) ) return FALSE;
+    if( !type_engine_update_builtin_dur( env, "hour", hour ) ) return FALSE;
+    if( !type_engine_update_builtin_dur( env, "day", day ) ) return FALSE;
+    if( !type_engine_update_builtin_dur( env, "week", week ) ) return FALSE;
+    if( !type_engine_update_builtin_dur( env, "eon", eon ) ) return FALSE;
+
+    // done
     return TRUE;
 }
 
@@ -536,24 +627,24 @@ t_CKBOOL type_engine_init( Chuck_Carrier * carrier )
     env->global()->type.add( env->ckt_cherr->base_name, env->ckt_cherr );        env->ckt_cherr->lock();
     // env->global()->type.add( env->ckt_thread->base_name, env->ckt_thread );   env->ckt_thread->lock();
 
-    // dur value
-    t_CKDUR samp = 1.0;
-    // TODO:
-    t_CKDUR second = carrier->vm->srate() * samp;
-    // t_CKDUR second = 44100 * samp;
-    t_CKDUR ms = second / 1000.0;
-    t_CKDUR minute = second * 60.0;
-    t_CKDUR hour = minute * 60.0;
-    t_CKDUR day = hour * 24.0;
-    t_CKDUR week = day * 7.0;
-    // one billion years, a very long time
-    // length of a sidereal year; https://en.wikipedia.org/wiki/Year
-    t_CKDUR eon = day * 365.256363004 * 1000000000.0;
-
     // add internal classes
     EM_log( CK_LOG_HERALD, "adding base classes..." );
     EM_pushlog();
 
+    // initialize operator overloading (part 1)
+    // 1.5.4.2 (ge) broken up into two parts; moved part 1 to here:
+    // before initializing builtin types -- since some types,
+    // e.g., string, now overload operators
+    // (also see: type_engine_init_op_overload_builtin())
+    if( !type_engine_init_op_overload( env ) ) return FALSE;
+
+    //-------------------------
+    // initialize internal classes; for now these are assumed to not error out
+    // NOTE: alternately, could test for return values and bailing out gracefully
+    // however, there may be inconstencies for cleaning up ChucK::init() fails
+    //-------------------------
+    // disable array type cache until ckt_array is initialized | 1.5.4.0 (ge) added
+    env->arrayTypeCache()->enable( FALSE );
     // special: Object and Type, whose initializations mutually depend
     init_class_object( env, env->ckt_object );
     // special: @array and Type, whose initializations mutually depend
@@ -563,6 +654,9 @@ t_CKBOOL type_engine_init( Chuck_Carrier * carrier )
     // initialize of Object's and @array's Type objects are deferred until after init_class_type()
     type_engine_init_special( env, env->ckt_object );
     type_engine_init_special( env, env->ckt_array );
+    // enable array type cache now that ckt_array is initialized | 1.5.4.0 (ge) added
+    env->arrayTypeCache()->enable( TRUE );
+    //-------------------------
 
     // initialize the remaining internal classes
     init_class_string( env, env->ckt_string );
@@ -590,19 +684,19 @@ t_CKBOOL type_engine_init( Chuck_Carrier * carrier )
     // pop indent
     EM_poplog();
 
-    // default global values
+    // default global values (except for the durs, which will be updated shortly hereafter)
     env->global()->value.add( "null", new Chuck_Value( env->ckt_null, "null", new void *(NULL), TRUE ) );
     env->global()->value.add( "NULL", new Chuck_Value( env->ckt_null, "NULL", new void *(NULL), TRUE ) );
     env->global()->value.add( "t_zero", new Chuck_Value( env->ckt_time, "time_zero", new t_CKDUR(0.0), TRUE ) );
     env->global()->value.add( "d_zero", new Chuck_Value( env->ckt_dur, "dur_zero", new t_CKDUR(0.0), TRUE ) );
-    env->global()->value.add( "samp", new Chuck_Value( env->ckt_dur, "samp", new t_CKDUR(samp), TRUE ) );
-    env->global()->value.add( "ms", new Chuck_Value( env->ckt_dur, "ms", new t_CKDUR(ms), TRUE ) );
-    env->global()->value.add( "second", new Chuck_Value( env->ckt_dur, "second", new t_CKDUR(second), TRUE ) );
-    env->global()->value.add( "minute", new Chuck_Value( env->ckt_dur, "minute", new t_CKDUR(minute), TRUE ) );
-    env->global()->value.add( "hour", new Chuck_Value( env->ckt_dur, "hour", new t_CKDUR(hour), TRUE ) );
-    env->global()->value.add( "day", new Chuck_Value( env->ckt_dur, "day", new t_CKDUR(day), TRUE ) );
-    env->global()->value.add( "week", new Chuck_Value( env->ckt_dur, "week", new t_CKDUR(week), TRUE ) );
-    env->global()->value.add( "eon", new Chuck_Value( env->ckt_dur, "eon", new t_CKDUR(eon), TRUE ) );
+    env->global()->value.add( "samp", new Chuck_Value( env->ckt_dur, "samp", new t_CKDUR(0.0), TRUE ) );
+    env->global()->value.add( "ms", new Chuck_Value( env->ckt_dur, "ms", new t_CKDUR(0.0), TRUE ) );
+    env->global()->value.add( "second", new Chuck_Value( env->ckt_dur, "second", new t_CKDUR(0.0), TRUE ) );
+    env->global()->value.add( "minute", new Chuck_Value( env->ckt_dur, "minute", new t_CKDUR(0.0), TRUE ) );
+    env->global()->value.add( "hour", new Chuck_Value( env->ckt_dur, "hour", new t_CKDUR(0.0), TRUE ) );
+    env->global()->value.add( "day", new Chuck_Value( env->ckt_dur, "day", new t_CKDUR(0.0), TRUE ) );
+    env->global()->value.add( "week", new Chuck_Value( env->ckt_dur, "week", new t_CKDUR(0.0), TRUE ) );
+    env->global()->value.add( "eon", new Chuck_Value( env->ckt_dur, "eon", new t_CKDUR(0.0), TRUE ) );
     env->global()->value.add( "true", new Chuck_Value( env->ckt_int, "true", new t_CKINT(1), TRUE ) );
     env->global()->value.add( "false", new Chuck_Value( env->ckt_int, "false", new t_CKINT(0), TRUE ) );
     env->global()->value.add( "maybe", new Chuck_Value( env->ckt_int, "maybe", new t_CKFLOAT(.5), FALSE ) );
@@ -610,6 +704,11 @@ t_CKBOOL type_engine_init( Chuck_Carrier * carrier )
     env->global()->value.add( "global", new Chuck_Value( env->ckt_class, "global", env->global(), TRUE ) );
     env->global()->value.add( "chout", new Chuck_Value( env->ckt_io, "chout", new Chuck_IO_Chout( carrier ), TRUE ) );
     env->global()->value.add( "cherr", new Chuck_Value( env->ckt_io, "cherr", new Chuck_IO_Cherr( carrier ), TRUE ) );
+
+    // update the base dur values, according to initial sample rate | 1.5.4.2 (ge) re-factored to support run-time sample rate updates
+    type_engine_update_builtin_durs( env, carrier->vm->srate() );
+    // register a callback to be notified when sample rate changes | 1.5.4.2 (ge) added
+    carrier->vm->register_callback_on_srate_update( type_engine_on_srate_update_cb, env );
 
     // TODO: can't use the following now is local to shred
     // env->global()->value.add( "now", new Chuck_Value( env->ckt_time, "now", &(vm->shreduler()->now_system), TRUE ) );
@@ -700,13 +799,33 @@ t_CKBOOL type_engine_init( Chuck_Carrier * carrier )
     // commit the global namespace
     env->global()->commit();
 
-    // initialize operator mappings
-    if( !type_engine_init_op_overload( env ) ) return FALSE;
+    // initialize operator overloas (part 2: reserve builtin overloads)
+    // 1.5.4.2 (ge) this was broken up into two parts due to the need to
+    // initialize op overloads in general before initializing the builtin
+    // types like string, which now overload operators instead of hard-coding
+    // string operations; (also see type_engine_init_op_overload())
+    type_engine_init_op_overload_builtin( env );
+
+    // important: preserve all entries (or they will be cleared on next reset)
+    env->op_registry.preserve();
+
+    // clear/create/reset [user] namespace | 1.5.4.0 (ge) added/moved here
+    // subsequent definitions (e.g., public classes) would be added
+    // to this namespace, unless explicitly specified;
+    // types added to the [user] namespace will be cleared during clearVM
+    // whereas types in the [global] namespace persists
+    env->clear_user_namespace();
 
     // pop indent level
     EM_poplog();
 
     return TRUE;
+
+// error:
+//     EM_error2( 0, "(internal error) during type initialization..." );
+//     EM_error2( 0, "...bailing out; please contact the ChucK Team" );
+
+    return FALSE;
 }
 
 
@@ -832,7 +951,7 @@ Chuck_Context * type_engine_make_context( a_Program prog, const string & filenam
 
 //-----------------------------------------------------------------------------
 // name: type_engine_check_context()
-// desc: ...
+// desc: type check a context (a context is equivalent to a single .ck file)
 //-----------------------------------------------------------------------------
 t_CKBOOL type_engine_check_context( Chuck_Env * env,
                                     Chuck_Context * context,
@@ -873,21 +992,23 @@ t_CKBOOL type_engine_check_context( Chuck_Env * env,
         {
         case ae_section_stmt:
             // if only classes, then skip
-            if( how_much == te_do_classes_only ) break;
+            if( how_much == te_do_import_only ) break;
             // check the statements
             ret = type_engine_check_stmt_list( env, prog->section->stmt_list );
             break;
 
         case ae_section_func:
-            // if only classes, then skip
-            if( how_much == te_do_classes_only ) break;
+            // check the compilation criteria | 1.5.2.5 (ge) added
+            if( !howMuch_criteria_match( how_much, prog->section->func_def ) ) break;
             // check the function definition
             ret = type_engine_check_func_def( env, prog->section->func_def );
             break;
 
         case ae_section_class:
-            // if no classes, then skip
-            if( how_much == te_do_no_classes ) break;
+            // 1.5.2.5 (ge) check the compilation criteria
+            // if( !howMuch_criteria_match( how_much, prog->section->class_def ) ) break;
+            // 1.5.4.0 (ge) commented out (see type_engine_prog0_scan() for explanation)
+
             // check the class definition
             ret = type_engine_check_class_def( env, prog->section->class_def );
             break;
@@ -988,9 +1109,6 @@ t_CKBOOL type_engine_unload_context( Chuck_Env * env )
     // removing reference to AST tree, which is cleaned up elsewhere
     // see cleanup_AST() in the parser | 1.5.0.5 (ge) added
     env->context->parse_tree = NULL;
-    // removing reference to public_class_def
-    // this should only be used during compilation | 1.5.0.5 (ge) added
-    env->context->public_class_def = NULL;
 
     // log
     EM_log( CK_LOG_FINER, "restoring context '%s'...", env->contexts.back()->filename.c_str() );
@@ -1060,6 +1178,11 @@ t_CKBOOL type_engine_check_stmt( Chuck_Env * env, a_Stmt stmt )
     // the type of stmt
     switch( stmt->s_type )
     {
+        case ae_stmt_import: // 1.5.2.5 (ge) added
+            // do nothing here (return true to bypass)
+            ret = TRUE;
+            break;
+
         case ae_stmt_if:
             // count scope to help determine class member
             env->class_scope++;
@@ -1971,6 +2094,7 @@ t_CKTYPE type_engine_check_op( Chuck_Env * env, ae_Operator op, a_Exp lhs, a_Exp
                 left = lhs->cast_to = env->ckt_string;
             }
         case ae_op_minus:
+            // vectors implicit conversions
             CK_LR( te_vec3, te_vec4 ) left = lhs->cast_to = env->ckt_vec4;
             else CK_LR( te_vec4, te_vec3 ) right = rhs->cast_to = env->ckt_vec4;
             else CK_LR( te_vec2, te_vec4 ) left = lhs->cast_to = env->ckt_vec4;
@@ -2013,6 +2137,13 @@ t_CKTYPE type_engine_check_op( Chuck_Env * env, ae_Operator op, a_Exp lhs, a_Exp
             if( isa( left, env->ckt_object ) && isa( right, env->ckt_string ) && !isa( left, env->ckt_string ) )
                 left = lhs->cast_to = env->ckt_string;
         case ae_op_minus_chuck:
+            // vec implicit conversions | 1.5.4.2 (ge) added
+            CK_LR( te_vec3, te_vec4 ) left = lhs->cast_to = env->ckt_vec4;
+            else CK_LR( te_vec4, te_vec3 ) right = rhs->cast_to = env->ckt_vec4;
+            else CK_LR( te_vec2, te_vec4 ) left = lhs->cast_to = env->ckt_vec4;
+            else CK_LR( te_vec4, te_vec2 ) right = rhs->cast_to = env->ckt_vec4;
+            else CK_LR( te_vec2, te_vec3 ) left = lhs->cast_to = env->ckt_vec3;
+            else CK_LR( te_vec3, te_vec2 ) right = rhs->cast_to = env->ckt_vec3;
         case ae_op_times_chuck:
         case ae_op_divide_chuck:
         case ae_op_percent_chuck:
@@ -2093,14 +2224,14 @@ t_CKTYPE type_engine_check_op( Chuck_Env * env, ae_Operator op, a_Exp lhs, a_Exp
     switch( op )
     {
     case ae_op_plus:
-        // string + int/float
-        if( isa( left, env->ckt_string ) )
-        {
-            // right is string or int/float
-            if( isa( right, env->ckt_string ) || isa( right, env->ckt_int )
-                || isa( right, env->ckt_float ) )
-                break;
-        }
+//        // string + int/float
+//        if( isa( left, env->ckt_string ) )
+//        {
+//            // right is string or int/float
+//            if( isa( right, env->ckt_string ) || isa( right, env->ckt_int )
+//                || isa( right, env->ckt_float ) )
+//                break;
+//        }
     case ae_op_plus_chuck:
         // int/float + string
         if( isa( left, env->ckt_string ) || isa( left, env->ckt_int ) || isa( left, env->ckt_float ) )
@@ -2255,11 +2386,11 @@ t_CKTYPE type_engine_check_op( Chuck_Env * env, ae_Operator op, a_Exp lhs, a_Exp
         CK_COMMUTE( te_vec2, te_vec4 ) return env->ckt_vec4; // 1.5.1.7
         CK_COMMUTE( te_vec3, te_vec4 ) return env->ckt_vec4; // 1.3.5.3
         CK_COMMUTE( te_dur, te_time ) return env->ckt_time;
-        if( isa( left, env->ckt_string ) && isa( right, env->ckt_string ) ) return env->ckt_string;
-        if( isa( left, env->ckt_string ) && isa( right, env->ckt_int ) ) return env->ckt_string;
-        if( isa( left, env->ckt_string ) && isa( right, env->ckt_float ) ) return env->ckt_string;
-        if( isa( left, env->ckt_int ) && isa( right, env->ckt_string ) ) return env->ckt_string;
-        if( isa( left, env->ckt_float ) && isa( right, env->ckt_string ) ) return env->ckt_string;
+//        if( isa( left, env->ckt_string ) && isa( right, env->ckt_string ) ) return env->ckt_string;
+//        if( isa( left, env->ckt_string ) && isa( right, env->ckt_int ) ) return env->ckt_string;
+//        if( isa( left, env->ckt_string ) && isa( right, env->ckt_float ) ) return env->ckt_string;
+//        if( isa( left, env->ckt_int ) && isa( right, env->ckt_string ) ) return env->ckt_string;
+//        if( isa( left, env->ckt_float ) && isa( right, env->ckt_string ) ) return env->ckt_string;
     break;
 
     case ae_op_minus:
@@ -2354,7 +2485,6 @@ t_CKTYPE type_engine_check_op( Chuck_Env * env, ae_Operator op, a_Exp lhs, a_Exp
         CK_LR( te_vec2, te_vec2 ) return env->ckt_int; // 1.5.1.7
         CK_LR( te_vec3, te_vec3 ) return env->ckt_int; // 1.3.5.3
         CK_LR( te_vec4, te_vec4 ) return env->ckt_int; // 1.3.5.3
-        if( isa( left, env->ckt_object ) && isa( right, env->ckt_object ) ) return env->ckt_int;
     case ae_op_lt:
     case ae_op_le:
     {
@@ -2445,6 +2575,14 @@ t_CKTYPE type_engine_check_op( Chuck_Env * env, ae_Operator op, a_Exp lhs, a_Exp
     Chuck_Type * ret = type_engine_check_op_overload_binary( env, op, left, right, binary );
     // if we have a hit
     if( ret ) return ret;
+
+    // if no match, catch reference compare | 1.5.4.2 (ge) moved to after op overload check
+    if( op == ae_op_eq || op == ae_op_neq )
+    {
+        // if both are Object references
+        // NB string == string is overloaded by default
+        if( isa( left, env->ckt_object ) && isa( right, env->ckt_object ) ) return env->ckt_int;
+    }
 
     // no match
     EM_error2( binary->where,
@@ -3168,13 +3306,12 @@ t_CKTYPE type_engine_check_exp_unary( Chuck_Env * env, a_Exp_Unary unary )
                 if( !type_engine_check_array_subscripts( env, unary->array->exp_list ) )
                     return NULL;
 
-                // create the new array type, replace t
-                t = new_array_type(
-                    env,  // the env
+                // get (or create) matching array type; replace t
+                t = env->get_array_type(
                     env->ckt_array,  // the array base class, usually env->ckt_array
                     unary->array->depth,  // the depth of the new type
-                    t,  // the 'array_type'
-                    env->curr  // the owner namespace
+                    t  // the 'array_type'
+                    // env->curr  // the owner namespace
                 );
 
                 // TODO: ref?
@@ -3359,8 +3496,7 @@ t_CKTYPE type_engine_check_exp_primary( Chuck_Env * env, a_Exp_Primary exp )
                         // file-context-global-scope (v->is_context_global)
                         // AND non-explictly-global !(v->is_global) variables
                         if( v && v->is_context_global && !v->is_global
-                              && env->class_def && env->context->public_class_def
-                              && env->context->public_class_def->decl == ae_key_public )
+                              && env->class_def && env->class_def->is_public )
                         {
                             if( v->func_ref )
                             {
@@ -3421,15 +3557,24 @@ t_CKTYPE type_engine_check_exp_primary( Chuck_Env * env, a_Exp_Primary exp )
                         // checking for class scope incorrect (thanks Robin Davies)
                         if( !env->class_def /* || env->class_scope > 0 */ )
                         {
+                            // error message
                             EM_error2( exp->where,
                                 "undefined variable '%s'", S_name(exp->var) );
                             return NULL;
                         }
                         else
                         {
+                            // error message
                             EM_error2( exp->where,
-                                "undefined variable/member '%s' in class/namespace '%s'",
+                                "undefined variable/function '%s' in class/namespace '%s'",
                                 S_name(exp->var), env->class_def->base_name.c_str() );
+
+                            // check if we are being imported | 1.5.4.0 (ge) added
+                            if( env->context->progress == Chuck_Context::P_IMPORTING )
+                            {
+                                // more info / a hint
+                                EM_error2( 0, "(hint: classes in imported files cannot access local variables/functions)");
+                            }
                             return NULL;
                         }
                     }
@@ -3637,13 +3782,12 @@ t_CKTYPE type_engine_check_exp_array_lit( Chuck_Env * env, a_Exp_Primary exp )
     // treat static and dynamic separately
     // exp->array->is_dynamic = !is_static_array_lit( env, exp->array->exp_list );
 
-    // create the new array type
-    t = new_array_type(
-        env,  // the env
+    // get (or create) matching array type
+    t = env->get_array_type(
         env->ckt_array,  // the array base class, usually env->ckt_array
         type->array_depth + 1,  // the depth of the new type
-        type->array_depth ? type->array_type : type,  // the 'array_type'
-        env->curr  // the owner namespace
+        type->array_depth ? type->array_type : type  // the 'array_type'
+        // env->curr  // the owner namespace
     );
 
     return t;
@@ -4227,9 +4371,9 @@ t_CKTYPE type_engine_check_exp_decl_part2( Chuck_Env * env, a_Exp_Decl decl )
             // flag
             value->is_static = TRUE;
             // offset
-            value->offset = env->class_def->info->class_data_size;
+            value->offset = env->class_def->nspc->class_data_size;
             // move the size
-            env->class_def->info->class_data_size += type->size;
+            env->class_def->nspc->class_data_size += type->size;
 
             // if this is an object
             if( is_obj && !is_ref )
@@ -4621,7 +4765,7 @@ t_CKTYPE type_engine_check_exp_func_call( Chuck_Env * env, a_Exp exp_func, a_Exp
         }
         else if( exp_func->s_type == ae_exp_dot_member )
         {
-            EM_error2( exp_func->where,
+            EM_error2( exp_func->dot_member.where,
                 "argument type(s) do not match...\n...for function '%s(...)'...",
                 type_engine_print_exp_dot_member( env, &exp_func->dot_member ).c_str() );
         }
@@ -4676,7 +4820,8 @@ t_CKTYPE type_engine_check_exp_func_call( Chuck_Env * env, a_Exp exp_func, a_Exp
 
     // if sporking, then don't track dependencies...
     // up to the programmer to ensure correctness across spork and time
-    if( !env->sporking )
+    // 1.5.4.0 (ge) treat spork as immediate function
+    // if( !env->sporking )
     {
         // if in a function definition
         if( env->func )
@@ -4792,10 +4937,8 @@ t_CKTYPE type_engine_check_exp_dot_member_special( Chuck_Env * env, a_Exp_Dot_Me
         }
         else
         {
-            // not valid
-            EM_error2( member->where,
-                      "type '%s' has no member named '%s'", member->t_base->c_name(), str.c_str() );
-            return NULL;
+            // check function | 1.5.4.1 (ge) changed from error
+            goto check_func;
         }
     }
     else if( member->t_base->xid == te_vec3 || member->t_base->xid == te_vec4 )
@@ -4862,11 +5005,16 @@ check_func:
     // check base; 1.3.5.3
     if( member->base->s_meta == ae_meta_value ) // is literal
     {
+        // mark as special primitive member function call from literal
+        // 1.5.4.2 (ge) added #special-primitive-member-func-from-literal
+        member->isSpecialPrimitiveFunc = TRUE;
+
         // error
-        EM_error2( member->base->where,
-                  "cannot call function from literal %s value",
-                  member->t_base->c_name() );
-        return NULL;
+        // 1.5.4.2 (ge) commented out #special-primitive-member-func-from-literal
+        // EM_error2( member->base->where,
+        //            "cannot call function from literal %s value",
+        //            member->t_base->c_name() );
+        // return NULL;
     }
 
     // find the value
@@ -4921,7 +5069,7 @@ t_CKTYPE type_engine_check_exp_dot_member( Chuck_Env * env, a_Exp_Dot_Member mem
     the_base = base_static ? member->t_base->actual_type : member->t_base;
 
     // have members?
-    if( !the_base->info )
+    if( !the_base->nspc )
     {
         // base type does not have members
         EM_error2( member->base->where,
@@ -5087,13 +5235,13 @@ t_CKBOOL type_engine_check_class_def( Chuck_Env * env, a_Class_Def class_def )
     // NB the following should be done AFTER the parent is completely defined
     // --
     // set the beginning of data segment to after the parent
-    the_class->info->offset = the_class->parent->obj_size;
+    the_class->nspc->offset = the_class->parent->obj_size;
     // duplicate the parent's virtual table
-    the_class->info->obj_v_table = the_class->parent->info->obj_v_table;
+    the_class->nspc->obj_v_table = the_class->parent->nspc->obj_v_table;
 
     // set the new type as current
     env->nspc_stack.push_back( env->curr );
-    env->curr = the_class->info;
+    env->curr = the_class->nspc;
     // push the class def
     env->class_stack.push_back( env->class_def );
     env->class_def = the_class;
@@ -5141,7 +5289,7 @@ t_CKBOOL type_engine_check_class_def( Chuck_Env * env, a_Class_Def class_def )
     if( ret )
     {
         // set the object size
-        the_class->obj_size = the_class->info->offset;
+        the_class->obj_size = the_class->nspc->offset;
         // set complete
         the_class->is_complete = TRUE;
     }
@@ -5599,8 +5747,8 @@ Chuck_Type * Chuck_Namespace::lookup_type( S_Symbol theName, t_CKINT climb,
     {
         // base type
         Chuck_Type * baseT = t;
-        // new array type
-        t = new_array_type(baseT->env(), baseT->env()->ckt_array, depth, baseT, baseT->env()->curr);
+        // get (or create) matching array type
+        t = baseT->env()->get_array_type( baseT->env()->ckt_array, depth, baseT /*, baseT->env()->curr */ );
     }
 
     // return t
@@ -5733,7 +5881,7 @@ t_CKBOOL operator ==( const Chuck_Type & lhs, const Chuck_Type & rhs )
         // check name
         if( lhs.base_name != rhs.base_name ) return FALSE;
         // check owner
-        if( lhs.owner != rhs.owner ) return FALSE;
+        // if( lhs.owner != rhs.owner ) return FALSE;
     }
 
     return TRUE;
@@ -5801,6 +5949,23 @@ t_CKBOOL isa_levels( const Chuck_Type & lhs, const Chuck_Type & rhs, t_CKUINT & 
     // check to see if type L == type R
     if( lhs == rhs ) return TRUE;
 
+    // if lhs is null and rhs isa Object
+    if( (lhs == *(lhs.env()->ckt_null)) && (rhs <= *(rhs.env()->ckt_object)) ) return TRUE;
+    //--------------------------------------------
+    // all arrays isa base @array type | 1.5.4.0 (ge & nick) added
+    if( lhs.array_depth > 0 && (rhs == *(rhs.env()->ckt_array) ) ) return TRUE;
+    // all arrays or base @array type isa Object
+    if( (lhs.array_depth > 0 || (lhs == *(lhs.env()->ckt_array))) && (rhs == *(rhs.env()->ckt_object) ) ) return TRUE;
+    // the above are special base cases; now can check for array depth mismatch
+    if( lhs.array_depth != rhs.array_depth ) return FALSE;
+    // if array?
+    if( lhs.array_depth > 0 )
+    {
+        // cancel out one level of the array dimension in the type
+        return isa_levels( *lhs.array_type, *rhs.array_type, levels );
+    }
+    //--------------------------------------------
+
     // if lhs is a child of rhs
     const Chuck_Type * curr = lhs.parent;
     while( curr )
@@ -5812,8 +5977,6 @@ t_CKBOOL isa_levels( const Chuck_Type & lhs, const Chuck_Type & rhs, t_CKUINT & 
 
     // back to 0
     levels = 0;
-    // if lhs is null and rhs is a object | removed 1.5.1.7?
-    if( (lhs == *(lhs.env()->ckt_null)) && (rhs <= *(rhs.env()->ckt_object)) ) return TRUE;
 
     return FALSE;
 }
@@ -6332,7 +6495,7 @@ Chuck_Type * type_engine_find_type( Chuck_Env * env, a_Id_List thePath )
         }
     }
     // start the namespace
-    Chuck_Namespace * theNpsc = type->info;
+    Chuck_Namespace * theNpsc = type->nspc;
     thePath = thePath->next;
 
     // loop
@@ -6345,7 +6508,7 @@ Chuck_Type * type_engine_find_type( Chuck_Env * env, a_Id_List thePath )
         // look in parent
         while( !t && type && type->parent )
         {
-            t = type_engine_find_type( type->parent->info, xid );
+            t = type_engine_find_type( type->parent->nspc, xid );
             type = type->parent;
         }
         // can't find
@@ -6363,7 +6526,7 @@ Chuck_Type * type_engine_find_type( Chuck_Env * env, a_Id_List thePath )
         // set the type
         type = t;
         // update nspc
-        if( type ) theNpsc = type->info;
+        if( type ) theNpsc = type->nspc;
         // advance
         thePath = thePath->next;
     }
@@ -6418,9 +6581,9 @@ Chuck_Value * type_engine_find_value( Chuck_Type * type, const string & xid )
     Chuck_Value * value = NULL;
 
     if( !type ) return NULL;
-    if( !type->info ) return NULL;
+    if( !type->nspc ) return NULL;
     // -1 for base
-    value = type->info->lookup_value( xid, -1 );
+    value = type->nspc->lookup_value( xid, -1 );
     if( value ) return value;
     if( type->parent ) return type_engine_find_value( type->parent, xid );
 
@@ -6490,7 +6653,7 @@ Chuck_Namespace * type_engine_find_nspc( Chuck_Env * env, a_Id_List thePath )
     Chuck_Type * type = type_engine_find_type( env, thePath );
     if( type == NULL ) return NULL;
     // copy the nspc
-    theNpsc = type->info;
+    theNpsc = type->nspc;
     if( theNpsc == NULL )
     {
         // primitive
@@ -6595,7 +6758,7 @@ Chuck_Type * type_engine_import_class_begin( Chuck_Env * env, Chuck_Type * type,
     Chuck_Type * type_type = NULL;
 
     // make sure there is not namesapce
-    if( type->info != NULL )
+    if( type->nspc != NULL )
     {
         // error
         EM_error2( 0, "during import: class '%s' already imported", type->c_name() );
@@ -6603,15 +6766,15 @@ Chuck_Type * type_engine_import_class_begin( Chuck_Env * env, Chuck_Type * type,
     }
 
     // allocate namespace for type
-    type->info = new Chuck_Namespace;
+    type->nspc = new Chuck_Namespace;
     // add reference
-    CK_SAFE_ADD_REF(type->info);
+    CK_SAFE_ADD_REF(type->nspc);
     // name it
-    type->info->name = type->base_name;
+    type->nspc->name = type->base_name;
     // set the parent namespace
-    type->info->parent = where;
+    type->nspc->parent = where;
     // add reference
-    CK_SAFE_ADD_REF(type->info->parent);
+    CK_SAFE_ADD_REF(type->nspc->parent);
 
     // if pre constructor
     if( pre_ctor != 0 )
@@ -6619,19 +6782,19 @@ Chuck_Type * type_engine_import_class_begin( Chuck_Env * env, Chuck_Type * type,
         // flag it
         type->has_pre_ctor = TRUE;
         // allocate vm code for (imported) pre_ctor
-        type->info->pre_ctor = new Chuck_VM_Code;
+        type->nspc->pre_ctor = new Chuck_VM_Code;
         // add ref | 1.5.2.0 (ge) added
-        CK_SAFE_ADD_REF( type->info->pre_ctor );
+        CK_SAFE_ADD_REF( type->nspc->pre_ctor );
         // add pre_ctor
-        type->info->pre_ctor->native_func = (t_CKUINT)pre_ctor;
+        type->nspc->pre_ctor->native_func = (t_CKUINT)pre_ctor;
         // mark type as ctor
-        type->info->pre_ctor->native_func_kind = ae_fp_ctor;
+        type->nspc->pre_ctor->native_func_kind = ae_fp_ctor;
         // specify that we need this
-        type->info->pre_ctor->need_this = TRUE;
+        type->nspc->pre_ctor->need_this = TRUE;
         // no arguments to preconstructor other than self
-        type->info->pre_ctor->stack_depth = sizeof(t_CKUINT);
+        type->nspc->pre_ctor->stack_depth = sizeof(t_CKUINT);
         // add name | 1.5.2.0 (ge) added
-        type->info->pre_ctor->name = string("class ") + type->base_name;
+        type->nspc->pre_ctor->name = string("class ") + type->base_name;
     }
 
     // if destructor
@@ -6640,19 +6803,19 @@ Chuck_Type * type_engine_import_class_begin( Chuck_Env * env, Chuck_Type * type,
         // flag it (needed since info could be shared with array types of this type, but this flag is only this type)
         type->has_pre_dtor = TRUE;
         // allocate vm code for dtor
-        type->info->pre_dtor = new Chuck_VM_Code;
+        type->nspc->pre_dtor = new Chuck_VM_Code;
         // add ref | 1.5.2.0 (ge) added
-        CK_SAFE_ADD_REF( type->info->pre_dtor );
+        CK_SAFE_ADD_REF( type->nspc->pre_dtor );
         // add dtor
-        type->info->pre_dtor->native_func = (t_CKUINT)dtor;
+        type->nspc->pre_dtor->native_func = (t_CKUINT)dtor;
         // mark type as dtor
-        type->info->pre_dtor->native_func_kind = ae_fp_dtor;
+        type->nspc->pre_dtor->native_func_kind = ae_fp_dtor;
         // specify that we need this
-        type->info->pre_dtor->need_this = TRUE;
+        type->nspc->pre_dtor->need_this = TRUE;
         // no arguments to destructor other than self
-        type->info->pre_dtor->stack_depth = sizeof(t_CKUINT);
+        type->nspc->pre_dtor->stack_depth = sizeof(t_CKUINT);
         // add name | 1.5.2.0 (ge) added
-        type->info->pre_dtor->name = string("class ") + type->base_name + string(" (destructor)");
+        type->nspc->pre_dtor->name = string("class ") + type->base_name + string(" (destructor)");
     }
 
     // clear the object size
@@ -6660,14 +6823,14 @@ Chuck_Type * type_engine_import_class_begin( Chuck_Env * env, Chuck_Type * type,
     // set the beginning of the data segment after parent
     if( type->parent )
     {
-        type->info->offset = type->parent->obj_size;
+        type->nspc->offset = type->parent->obj_size;
         // duplicate parent's virtual table
-        assert( type->parent->info != NULL );
-        type->info->obj_v_table = type->parent->info->obj_v_table;
+        assert( type->parent->nspc != NULL );
+        type->nspc->obj_v_table = type->parent->nspc->obj_v_table;
     }
 
     // set the owner namespace
-    type->owner = where; CK_SAFE_ADD_REF(type->owner);
+    // type->owner = where; CK_SAFE_ADD_REF(type->owner);
     // check if primitive
     if( !isprim( env, type ) ) // 1.3.5.3 (primitives already have size!)
     {
@@ -6694,7 +6857,7 @@ Chuck_Type * type_engine_import_class_begin( Chuck_Env * env, Chuck_Type * type,
 
     // make the type current
     env->nspc_stack.push_back( env->curr );
-    env->curr = type->info;
+    env->curr = type->nspc;
     // push the class def
     env->class_stack.push_back( env->class_def );
     env->class_def = type;
@@ -6915,7 +7078,7 @@ t_CKBOOL type_engine_import_class_end( Chuck_Env * env )
     }
 
     // set the object size
-    env->class_def->obj_size = env->class_def->info->offset;
+    env->class_def->obj_size = env->class_def->nspc->offset;
 
     // for everything that's not the base Object type or arrays | 1.5.0.0
     // context: Object and Type mutually depend, so we will initialize
@@ -7363,9 +7526,6 @@ void type_engine_init_op_overload_builtin( Chuck_Env * env )
     registry->reserve( env->ckt_vec2, ae_op_plus, env->ckt_vec3, TRUE ); // commute | 1.5.1.7
     registry->reserve( env->ckt_vec2, ae_op_plus, env->ckt_vec4, TRUE ); // commute | 1.5.1.7
     registry->reserve( env->ckt_vec3, ae_op_plus, env->ckt_vec4, TRUE ); // commute
-    registry->reserve( env->ckt_object, ae_op_plus, env->ckt_string ); // object +=> string
-    registry->reserve( env->ckt_int, ae_op_plus, env->ckt_string, TRUE ); // int/float +=> string
-    registry->reserve( env->ckt_float, ae_op_plus, env->ckt_string, TRUE ); // string +=> int/float
     // -
     registry->reserve( env->ckt_time, ae_op_minus, env->ckt_time );
     registry->reserve( env->ckt_time, ae_op_minus, env->ckt_dur );
@@ -7682,8 +7842,9 @@ t_CKBOOL type_engine_init_op_overload( Chuck_Env * env )
     registry->add( ae_op_ungruck_right )->configure( TRUE, false, false );
     registry->add( ae_op_ungruck_left )->configure( TRUE, false, false );
 
-    // mark built-in overload
-    type_engine_init_op_overload_builtin( env );
+    // mark built-in op overloads
+    // 1.5.4.2 (ge) moved to later ("part 2")
+    // type_engine_init_op_overload_builtin( env );
 
     // pop log
     EM_poplog();
@@ -7832,7 +7993,7 @@ Chuck_Type * Chuck_Context::new_Chuck_Type( Chuck_Env * env )
     // which should only be for the base Object type, which needs to be
     // initialize before the Type type is initialize, becaues Type is
     // a subclass of Object | 1.5.0.0 (ge) brain is bad
-    if( env->ckt_class->info != NULL )
+    if( env->ckt_class->nspc != NULL )
     {
         // initialize it as Type object | 1.5.0.0 (ge) added
         initialize_object( theType, env->ckt_class, NULL, env->vm() );
@@ -7901,12 +8062,116 @@ Chuck_Namespace * Chuck_Context::new_Chuck_Namespace()
 
 
 //-----------------------------------------------------------------------------
-// name: new_array_type()
+// name: get_array_type()
+// desc: retrieve array type based on parameters | 1.5.4.0 (ge, nick, andrew) added
+//-----------------------------------------------------------------------------
+Chuck_Type * Chuck_Env::get_array_type( Chuck_Type * array_parent,
+                                        t_CKUINT depth, Chuck_Type * base_type /*,
+                                        Chuck_Namespace * owner_nspc*/ )
+{
+    // call through
+    return array_types.getOrCreate( this, array_parent, depth, base_type );
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// operator overload (for map)
+//-----------------------------------------------------------------------------
+bool Chuck_ArrayTypeKeyCmp::operator()( const Chuck_ArrayTypeKey & a, const Chuck_ArrayTypeKey & b ) const
+{
+    // tadaaaa! well this doesn't seem to work with map.find()
+    return a < b;
+}
+// comparator
+bool Chuck_ArrayTypeKey::operator<( const Chuck_ArrayTypeKey & rhs ) const
+{
+    // tadaaaa, hopefully
+    if( array_parent != rhs.array_parent ) return array_parent < rhs.array_parent;
+    if( depth != rhs.depth ) return depth < rhs.depth;
+    return base_type < rhs.base_type;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: clear()
+// desc: clear the cache
+//-----------------------------------------------------------------------------
+void Chuck_ArrayTypeCache::clear()
+{
+    // look up (FYI: for some reasons find() doesn't seem to work)
+    std::map<Chuck_ArrayTypeKey, Chuck_Type *, Chuck_ArrayTypeKeyCmp>::iterator it;
+
+    // iterate
+    for( it = cache.begin(); it != cache.end(); it++ )
+    {
+        // release
+        CK_SAFE_RELEASE( it->second );
+    }
+
+    // clear the cache
+    cache.clear();
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: getOrCreate() | 1.5.4.0 (ge, nick, andrew) added
+// desc: lookup an array type; if not already cached, create and insert
+//-----------------------------------------------------------------------------
+Chuck_Type * Chuck_ArrayTypeCache::getOrCreate( Chuck_Env * env,
+                                                Chuck_Type * array_parent,
+                                                t_CKUINT depth,
+                                                Chuck_Type * base_type /* ,
+                                                Chuck_Namespace * owner_nspc */ )
+{
+    // if cache not enabled
+    if( !m_enabled )
+    {
+        // create and return
+        return create_new_array_type( env, array_parent, depth, base_type );
+    }
+
+    // return value
+    Chuck_Type * type = NULL;
+    // look for key
+    std::map<Chuck_ArrayTypeKey, Chuck_Type *, Chuck_ArrayTypeKeyCmp>::iterator it = cache.find(Chuck_ArrayTypeKey(array_parent,depth,base_type));
+
+    // if found
+    if( it != cache.end() )
+    {
+        // get the value from cache
+        type = it->second;
+    }
+    else // not found
+    {
+        // make new array type
+        type = create_new_array_type( env, array_parent,
+                                      depth, base_type /*,
+                                      owner_nspc */ );
+        // insert into cache
+        cache[Chuck_ArrayTypeKey(array_parent, depth, base_type)] = type;
+        // add reference count
+        CK_SAFE_ADD_REF( type );
+    }
+
+    // done
+    return type;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: create_new_array_type()
 // desc: instantiate new chuck type for some kind of array
 //-----------------------------------------------------------------------------
-Chuck_Type * new_array_type( Chuck_Env * env, Chuck_Type * array_parent,
-                             t_CKUINT depth, Chuck_Type * base_type,
-                             Chuck_Namespace * owner_nspc )
+Chuck_Type * create_new_array_type( Chuck_Env * env, Chuck_Type * array_parent,
+                                    t_CKUINT depth, Chuck_Type * base_type /*, Chuck_Namespace * owner_nspc*/ )
 {
     // make new type
     Chuck_Type * t = env->context->new_Chuck_Type( env );
@@ -7917,25 +8182,14 @@ Chuck_Type * new_array_type( Chuck_Env * env, Chuck_Type * array_parent,
     // set the name
     t->base_name = base_type->base_name;
 
-    // add entire type heirarchy to t
-    Chuck_Type * base_curr = base_type->parent;
-
     // 1.4.1.1 (nshaheed) added to allow declaring arrays with subclasses as elements (PR #211)
     // example: [ new SinOsc, new Sinosc ] @=> Osc arr[]; // this previously would fail type check
-    Chuck_Type * t_curr = t;
-    while( base_curr != NULL )
-    {
-        Chuck_Type * new_parent = new_array_element_type( env, base_curr, depth, owner_nspc );
-        t_curr->parent = new_parent;
-        CK_SAFE_ADD_REF(t_curr->parent );
+    // 1.5.4.0 (ge & nick) this is now handled in isa_levels()
 
-        base_curr = base_curr->parent;
-        t_curr = t_curr->parent;
-    }
-    // ???
-    t_curr->parent = array_parent;
+    // parent type
+    t->parent = array_parent;
     // add reference
-    CK_SAFE_ADD_REF(t_curr->parent);
+    CK_SAFE_ADD_REF(t->parent);
 
     // is a ref
     t->size = array_parent->size;
@@ -7948,51 +8202,11 @@ Chuck_Type * new_array_type( Chuck_Env * env, Chuck_Type * array_parent,
     // add reference
     CK_SAFE_ADD_REF(t->array_type);
     // set the namesapce
-    t->info = array_parent->info;
+    t->nspc = array_parent->nspc;
     // add reference
-    CK_SAFE_ADD_REF(t->info);
+    CK_SAFE_ADD_REF(t->nspc);
     // set owner
-    t->owner = owner_nspc; CK_SAFE_ADD_REF(t->owner);
-
-    // return the type
-    return t;
-}
-
-
-
-
-//-----------------------------------------------------------------------------
-// name: new_array_element_type()
-// desc: instantiate new chuck type for use in arrays (nshaheed) added
-//-----------------------------------------------------------------------------
-Chuck_Type * new_array_element_type( Chuck_Env * env, Chuck_Type * base_type,
-                                     t_CKUINT depth, Chuck_Namespace * owner_nspc)
-{
-    // make new type
-    Chuck_Type * t = env->context->new_Chuck_Type( env );
-
-    // set the id
-    t->xid = te_array;
-    // set the name
-    t->base_name = base_type->base_name;
-    // set the size
-    t->size = base_type->size;
-    // set the array depth
-    t->array_depth = depth;
-    // set actual type (for equality checking)
-    t->actual_type = base_type;
-    // set the array type
-    if (base_type->array_type != NULL) {
-      t->array_type = base_type->array_type;
-      CK_SAFE_ADD_REF(t->array_type);
-    }
-    // set the namespace
-    if (base_type->info != NULL) {
-      t->info = base_type->info;
-      CK_SAFE_ADD_REF(t->info);
-    }
-    // set owner
-    t->owner = owner_nspc; CK_SAFE_ADD_REF(t->owner);
+    // t->owner = owner_nspc; CK_SAFE_ADD_REF(t->owner);
 
     // return the type
     return t;
@@ -8550,7 +8764,7 @@ error:
 // desc: add the DLL using type_engine functions (added 1.3.0.0)
 //-----------------------------------------------------------------------------
 t_CKBOOL type_engine_add_dll2( Chuck_Env * env, Chuck_DLL * dll,
-                               const string &  )
+                               const string & dest )
 {
     const Chuck_DL_Query * query = NULL;
 
@@ -8748,14 +8962,14 @@ t_CKBOOL type_engine_is_base_static( Chuck_Env * env, Chuck_Type * baseType )
 
 
 
-static const char * g_howmuch[] = { "ALL", "CLASSES_ONLY", "ALL_EXCEPT_CLASSES" };
+static const char * g_howmuch[] = { "ALL", "IMPORT_ONLY", "ALL_EXCEPT_IMPORT" };
 //-----------------------------------------------------------------------------
 // name: howmuch2str()
 // desc: ...
 //-----------------------------------------------------------------------------
 const char * howmuch2str( te_HowMuch how_much )
 {
-    if( how_much < 0 || how_much > te_do_no_classes ) return "[INVALID]";
+    if( how_much < 0 || how_much > te_skip_import ) return "[INVALID]";
     else return g_howmuch[how_much];
 }
 
@@ -9525,12 +9739,13 @@ Chuck_Type::Chuck_Type( Chuck_Env * env, te_Type _id, const std::string & _n,
     base_name = _n;
     parent = _p; CK_SAFE_ADD_REF( parent );
     size = _s;
-    owner = NULL;
+    // owner = NULL;
     array_type = NULL;
     array_depth = 0;
     obj_size = 0;
-    info = NULL;
+    nspc = NULL;
     func = NULL; /* def = NULL; */
+    is_public = FALSE;
     is_copy = FALSE;
     ugen_info = NULL;
     is_complete = TRUE;
@@ -9577,13 +9792,15 @@ void Chuck_Type::reset()
     xid = te_void;
     size = array_depth = obj_size = 0;
     is_copy = FALSE;
+    is_public = FALSE;
+    is_complete = FALSE;
 
     // free only if not locked: to prevent garbage collection after exit
     if( !this->m_locked )
     {
         // release references
-        CK_SAFE_RELEASE( info );
-        CK_SAFE_RELEASE( owner );
+        CK_SAFE_RELEASE( nspc );
+        // CK_SAFE_RELEASE( owner );
         CK_SAFE_RELEASE( ctors_all ); // 1.5.2.0 (ge) added
         CK_SAFE_RELEASE( ctor_default ); // 1.5.2.0 (ge) added
         CK_SAFE_RELEASE( dtor_the ); // 1.5.2.0 (ge) added
@@ -9620,8 +9837,8 @@ const Chuck_Type & Chuck_Type::operator =( const Chuck_Type & rhs )
     this->array_depth = rhs.array_depth;
     this->array_type = rhs.array_type; CK_SAFE_ADD_REF(this->array_type);
     this->func = rhs.func; CK_SAFE_ADD_REF(this->func);
-    this->info = rhs.info; CK_SAFE_ADD_REF(this->info);
-    this->owner = rhs.owner; CK_SAFE_ADD_REF(this->owner);
+    this->nspc = rhs.nspc; CK_SAFE_ADD_REF(this->nspc);
+    // this->owner = rhs.owner; CK_SAFE_ADD_REF(this->owner);
 
     return *this;
 }
@@ -9739,13 +9956,13 @@ t_CKBOOL type_engine_has_implicit_def_ctor( Chuck_Type * type )
         }
 
         // check
-        if( type->info )
+        if( type->nspc )
         {
             // check for mfuns and mvars (if we get here, type->info cannot be NULL)
             vector<Chuck_Func *> fs;
-            type->info->get_funcs( fs );
+            type->nspc->get_funcs( fs );
             vector<Chuck_Value *> vs;
-            type->info->get_values( vs );
+            type->nspc->get_values( vs );
 
             // iterate over functions
             for( vector<Chuck_Func *>::iterator f = fs.begin(); f != fs.end(); f++ )
@@ -10092,12 +10309,12 @@ void Chuck_Type::apropos_funcs( std::string & output,
     ostringstream sout;
 
     // check type info
-    if( this->info )
+    if( this->nspc )
     {
         // vector of functions
         vector<Chuck_Func *> funcs;
         // retrieve functions in this type
-        this->info->get_funcs(funcs);
+        this->nspc->get_funcs(funcs);
 
         // constructors
         vector<Chuck_Func *> ctors;
@@ -10282,12 +10499,12 @@ void Chuck_Type::apropos_vars( std::string & output, const std::string & PREFIX,
     ostringstream sout;
 
     // check type info
-    if( this->info )
+    if( this->nspc )
     {
         // vector of variables
         vector<Chuck_Value *> vars;
         // retrieve variables in this type
-        this->info->get_values(vars);
+        this->nspc->get_values(vars);
 
         // member variables
         vector<Chuck_Value *> mvars;
@@ -10619,6 +10836,8 @@ Chuck_Op_Semantics * Chuck_Op_Registry::lookup( ae_Operator op )
     // return
     return semantics;
 }
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -11408,4 +11627,60 @@ t_CKBOOL Chuck_Type::do_cbs_on_instantiate( std::vector<CallbackOnInstantiate> &
     }
     // done
     return retval;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: howMuch_criteria_match()
+// desc: check if a func def meets "HowMuch" to compile criteria
+//-----------------------------------------------------------------------------
+t_CKBOOL howMuch_criteria_match( te_HowMuch criteria, a_Func_Def func_def )
+{
+    switch( criteria )
+    {
+        case te_do_all:
+            // categorically true
+            return TRUE;
+            break;
+        case te_do_import_only:
+            // check if 1) func def is public and 2) is an operator overload
+            if( func_def->func_decl == ae_key_public && func_def->op2overload != ae_op_none ) return TRUE;
+            break;
+        case te_skip_import:
+            // pass if either not public or not an operator overload
+            if( func_def->func_decl != ae_key_public || func_def->op2overload == ae_op_none ) return TRUE;
+            break;
+    }
+    // catch all
+    return FALSE;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: howMuch_criteria_match()
+// desc: check if a class def meets "HowMuch" to compile criteria
+//-----------------------------------------------------------------------------
+t_CKBOOL howMuch_criteria_match( te_HowMuch criteria, a_Class_Def class_def )
+{
+    switch( criteria )
+    {
+        case te_do_all:
+            // categorically true
+            return TRUE;
+            break;
+        case te_do_import_only:
+            // check if class is declared as public
+            if( class_def->decl == ae_key_public ) return TRUE;
+            break;
+        case te_skip_import:
+            // check if class is declared as public
+            if( class_def->decl != ae_key_public ) return TRUE;
+            break;
+    }
+    // catch all
+    return FALSE;
 }

@@ -1,25 +1,26 @@
 /*----------------------------------------------------------------------------
   ChucK Strongly-timed Audio Programming Language
-    Compiler and Virtual Machine
+    Compiler, Virtual Machine, and Synthesis Engine
 
   Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  it under the dual-license terms of EITHER the MIT License OR the GNU
+  General Public License (the latter as published by the Free Software
+  Foundation; either version 2 of the License or, at your option, any
+  later version).
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful and/or
+  interesting, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  MIT Licence and/or the GNU General Public License for details.
 
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-  U.S.A.
+  You should have received a copy of the MIT License and the GNU General
+  Public License (GPL) along with this program; a copy of the GPL can also
+  be obtained by writing to the Free Software Foundation, Inc., 59 Temple
+  Place, Suite 330, Boston, MA 02111-1307 U.S.A.
 -----------------------------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
@@ -191,7 +192,7 @@ public:
     t_CKBOOL remove( Chuck_UGen * ugen );
     // detach all associate ugens | 1.5.1.5 (ge) added
     void detach_ugens();
-    // clean up ugens | 1.5.2.0 (ge) added
+    // remove all attached ugen, releasing ones without external reference
     void prune_ugens();
 
 public:
@@ -413,6 +414,33 @@ public:
 
 
 //-----------------------------------------------------------------------------
+// name: struct Chuck_VM_Callback_On_SampleRate_Update | 1.5.4.2 (ge) added
+// desc: an entry for a callback to be called when system sample rate changes
+//-----------------------------------------------------------------------------
+struct Chuck_VM_Callback_On_SampleRate_Update
+{
+    // function pointer to call
+    f_callback_on_srate_update cb;
+    // user data
+    void * userdata;
+
+    // constructor
+    Chuck_VM_Callback_On_SampleRate_Update( f_callback_on_srate_update f = NULL, void * data = NULL )
+    : cb(f), userdata(data) { }
+
+    // copy constructor
+    Chuck_VM_Callback_On_SampleRate_Update( const Chuck_VM_Callback_On_SampleRate_Update & other )
+    : cb(other.cb), userdata(other.userdata) { }
+
+    // ==
+    bool operator ==( const Chuck_VM_Callback_On_SampleRate_Update & other )
+    { return this->cb == other.cb && this->userdata == other.userdata; }
+};
+
+
+
+
+//-----------------------------------------------------------------------------
 // name: struct Chuck_VM_Callback_On_Shutdown
 // desc: an entry for a callback to be called on VM shutdown
 //-----------------------------------------------------------------------------
@@ -433,7 +461,7 @@ struct Chuck_VM_Callback_On_Shutdown
 
     // ==
     bool operator ==( const Chuck_VM_Callback_On_Shutdown & other )
-    { return this->cb == other.cb; }
+    { return this->cb == other.cb && this->userdata == other.userdata; }
 };
 
 
@@ -593,6 +621,8 @@ public:
     t_CKBOOL shutdown();
     // return whether VM is initialized
     t_CKBOOL has_init() { return m_init; }
+    // update sample rate (this will also trigger notifications for srate update)
+    t_CKBOOL update_srate( t_CKUINT srate );
 
 public: // run state; 1.3.5.3
     // run start
@@ -687,10 +717,14 @@ public:
 public:
     // register a callback to be called on VM shutdown | 1.5.2.5 (ge) added
     void register_callback_on_shutdown( f_callback_on_shutdown cb, void * bindle );
+    // register a callback to be called on system sample rate update | 1.5.4.2 (ge) added
+    void register_callback_on_srate_update( f_callback_on_srate_update cb, void * bindle );
 
 protected:
     // notify callbacks on VM shutdown | 1.5.2.5 (ge) added
     void notify_callbacks_on_shutdown();
+    // notify callbacks on sample rate update | 1.5.4.2 (ge) added
+    void notify_callbacks_on_srate_update( t_CKUINT srate );
 
 //-----------------------------------------------------------------------------
 // data
@@ -772,6 +806,8 @@ protected:
 protected:
     // 1.5.2.5 (ge) on major VM events callbacks
     std::list<Chuck_VM_Callback_On_Shutdown> m_callbacks_on_shutdown;
+    // 1.5.4.2 (ge) on system sample rate update
+    std::list<Chuck_VM_Callback_On_SampleRate_Update> m_callbacks_on_srate_update;
 };
 
 

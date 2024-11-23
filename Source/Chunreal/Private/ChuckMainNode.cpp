@@ -45,7 +45,7 @@ namespace Metasound
         theChuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, false);
         //theChuck->setParam(CHUCK_PARAM_USER_CHUGINS, named_dls);
         //theChuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, dl_search_path);
-        theChuck->setParam(CHUCK_PARAM_HINT_IS_REALTIME_AUDIO, true);
+       // theChuck->setParam(CHUCK_PARAM_HINT_IS_REALTIME_AUDIO, true);
 
         //Set log
         #if PRINT_CHUCK_LOG

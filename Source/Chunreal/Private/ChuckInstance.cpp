@@ -43,7 +43,7 @@ ChucK* UChuckCode::CreateChuckVm(int32 InNumChannels)
 	theChuck = new ChucK();
 	theChuck->setLogLevel(ChuckLogLevel.GetValueOnAnyThread());
 	//Initialize Chuck params
-	theChuck->setParam(CHUCK_PARAM_CHUGIN_DIRECTORY, TCHAR_TO_UTF8(*FPaths::Combine(*ChunrealModule.workingDirectory, CHUGIN_PLATFORM_DIR)));
+	theChuck->setParam(CHUCK_PARAM_USER_CHUGINS, TCHAR_TO_UTF8(*FPaths::Combine(*ChunrealModule.workingDirectory, TEXT("chugins"))));
 	theChuck->setParam(CHUCK_PARAM_SAMPLE_RATE, PlatformSampleRate);
 	theChuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, InNumChannels);
 	theChuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, InNumChannels);

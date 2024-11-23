@@ -25,6 +25,8 @@
 
 //UCHUCK();
 
+@import "chugins-win64/GVerb.chug"
+
 ;
 // synthesis patch
 Impulse i => TwoZero t => TwoZero t2 => OnePole p;
