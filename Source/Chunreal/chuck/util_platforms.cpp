@@ -45,7 +45,7 @@
   #else
     // 1.5.0.0 (ge) | #chunreal
     // unreal engine on windows disallows including windows.h
-    #include "Windows/MinWindows.h"
+#include "Windows/WindowsHWrapper.h"
   #endif // #ifndef __CHUNREAL_ENGINE__
   #include <io.h> // for _isatty()
 
