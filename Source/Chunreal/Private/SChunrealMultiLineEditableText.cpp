@@ -4,9 +4,6 @@
 #include "Rendering/DrawElements.h"
 #include "Types/SlateConstants.h"
 #include "Framework/Application/SlateApplication.h"
-
-#if WITH_FANCY_TEXT
-
 #include "ChunrealTextEditHelper.h"
 #include "Framework/Text/PlainTextLayoutMarshaller.h"
 #include "Widgets/Text/SlateEditableTextLayout.h"
@@ -847,4 +844,3 @@ bool SChunrealMultiLineEditableText::IsRightClickScrolling() const
 	return AmountScrolledWhileRightMouseDown >= FSlateApplication::Get().GetDragTriggerDistance() && VScrollBar.IsValid() && VScrollBar->IsNeeded();
 }
 
-#endif //WITH_FANCY_TEXT

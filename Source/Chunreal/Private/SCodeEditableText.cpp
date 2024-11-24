@@ -9,8 +9,6 @@ void SBkCodeEditableText::Construct( const FArguments& InArgs )
 {
 	SChunrealMultiLineEditableText::Construct(
 		SChunrealMultiLineEditableText::FArguments()
-		.Font(FCodeEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>("TextEditor.NormalText").Font)
-		.TextStyle(&FCodeEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>("TextEditor.NormalText"))
 		.Text(InArgs._Text)
 		.Marshaller(InArgs._Marshaller)
 		.AutoWrapText(false)
