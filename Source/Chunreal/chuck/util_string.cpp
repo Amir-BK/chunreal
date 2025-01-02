@@ -41,7 +41,7 @@
 #else
   // 1.5.0.0 (ge) | #chunreal
   // unreal engine on windows disallows including windows.h
-#include "Windows/WindowsHWrapper.h"
+  #include "Windows/WindowsHWrapper.h"
 #endif // #ifndef __CHUNREAL_ENGINE__
 #endif // #ifdef __PLATFORM_WINDOWS__
 
@@ -1354,11 +1354,13 @@ void tokenize( const std::string & str, std::vector<string> & tokens, const std:
 }
 
 
-// static instantiation
+
+
+//-----------------------------------------------------------------------------
+// TC static instantiation
+//-----------------------------------------------------------------------------
 t_CKBOOL TC::isEnabled = TRUE;
 t_CKBOOL TC::globalBypass = TRUE;
-
-
 //-----------------------------------------------------------------------------
 // on/off switches
 //-----------------------------------------------------------------------------
@@ -1379,7 +1381,6 @@ void TC::globalDisableOverride( t_CKBOOL setTrueToEngage )
     globalBypass = setTrueToEngage;
 }
 
-
 //-----------------------------------------------------------------------------
 // get bold escape sequence
 //-----------------------------------------------------------------------------
@@ -1388,7 +1389,6 @@ std::string TC::bold( const std::string & text )
     if( globalBypass || !isEnabled ) return text;
     return TC::bold() + text + TC::reset();
 }
-
 
 //-----------------------------------------------------------------------------
 // get color escape sequences
@@ -1454,10 +1454,8 @@ std::string TC::set_blue( t_CKBOOL bold )
     return std::string( "\033[38;5;39m" ) + (bold?TC::bold():"");
 }
 
-
 //-----------------------------------------------------------------------------
 // set*() methods -- returns escape sequences o insert into output
-
 //-----------------------------------------------------------------------------
 // set a terminal code
 std::string TC::set( TerminalCode code )

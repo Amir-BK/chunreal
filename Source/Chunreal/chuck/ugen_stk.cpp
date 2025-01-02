@@ -10540,7 +10540,7 @@ t_CKBOOL stk_verify_baseclass( void * ptr, const std::string & typeName, Chuck_V
     {
         // we have a problem
         EM_exception( "MethodCalledByAbstractClass: '%s' is an abstract class\n"
-                      "...call the method from one of its non-abstract subclasses | shred[id=%lu:%s]",
+                      "...(hint: call the method using a non-abstract subclass) shred[id=%lu:%s]",
                       typeName.c_str(), shred->xid, shred->name.c_str() );
         // halt the shred
         shred->is_running = FALSE;
@@ -16479,7 +16479,7 @@ void Stk :: swap64(unsigned char *ptr)
   #else
     // 1.5.0.0 (ge) | #chunreal
     // unreal engine on windows disallows including windows.h
-#include "Windows/WindowsHWrapper.h"
+    #include "Windows/WindowsHWrapper.h"
   #endif // #ifndef __CHUNREAL_ENGINE__
 #else
   #include <unistd.h>
